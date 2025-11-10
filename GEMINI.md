@@ -17,7 +17,7 @@
 | :--- | :--- | :--- |
 | **Package Manager** | npm | Workspaces 활용 |
 | **Frontend** | react | Cloudflare Pages 배포 |
-| **Backend** | Node.js (Express or Fastify) | Render 배포 (Docker) |
+| **Backend** | Node.js Express | Render 배포 (Docker or github) |
 | **Database** | MySQL | 로컬은 docker-compose, 운영은 Render/외부 DB superbase |
 | **ORM** | Prisma | DB 스키마 관리의 단일 진실 공급원(SSOT) |
 | **DevOps** | Docker | 로컬 DB 실행 및 백엔드 배포 이미지 빌드 |
