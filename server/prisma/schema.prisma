@@ -42,7 +42,7 @@ model DailyEducationDetail {
   date              DateTime // 📅 강의 가는 날짜
   traineeCount      Int      // 👥 교육 인원
   facilityNote      String?  // 📝 비고 (TV, 마이크 등 변동사항)
-
+  specificLocation  String?
   lectureLocationId Int
   lectureLocation   LectureLocation @relation(fields: [lectureLocationId], references: [id], onDelete: Cascade)
 

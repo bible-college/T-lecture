@@ -1,27 +1,24 @@
 const express = require('express');
 const config = require('./config');
 const { logger } = require('./common/middlewares');
-const userRoutes = require('./modules/user'); // (user 모듈도 index.js로 라우터 분리 추천)
+const userRoutes = require('./modules/user');
 const locationRoutes = require('./modules/location');
 
 const app = express();
 
 app.use(express.json()); // For parsing application/json
 app.use(logger); // Use the logger middleware
+
+// API Routes
 app.use('/api/locations', locationRoutes);
+app.use('/users', userRoutes);
 
+// Base Route
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello T-LECTURE!');
 });
 
-// User routes
-app.get('/users', userController.getUsers);
-app.post('/users', userController.createUser);
-
-app.listen(config.port, () => {
-  console.log(`Server listening at http://localhost:${config.port}`);
-});
-
+// Server Start
 app.listen(config.port, () => {
   console.log(`Server listening at http://localhost:${config.port}`);
 });
