@@ -1,3 +1,4 @@
+@ -1,56 +0,0 @@
 # Project Context for T-LECTURE
 
 ## 📋 프로젝트 개요
