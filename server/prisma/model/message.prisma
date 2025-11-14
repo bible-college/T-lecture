@@ -1,0 +1,43 @@
+enum MessageType {
+  Notice
+  Temporary
+  Confirmed
+  @@map("유형__t")
+}
+
+// 메시지 상태 (예: 발송대기, 발송완료, 취소 등)
+enum MessageStatus {
+  Pending
+  Sent
+  Canceled
+  @@map("상태__t")
+}
+
+
+model Message {
+  id        Int           @id @default(autoincrement())
+  type      MessageType?  @map("유형")
+  body      String?       @map("본문")
+  unitId    Int?          @map("부대id")
+  status    MessageStatus? @map("상태")
+  createdAt DateTime?     @map("생성일시")
+
+  unit      Unit?          @relation(fields: [unitId], references: [id])
+  receipts  MessageReceipt[]
+
+  @@map("메시지")
+  @@index([unitId], map: "메시지_unit_idx")
+}
+
+model MessageReceipt {
+  messageId    Int @map("메시지id")
+  instructorId Int @map("강사id")
+  readAt       DateTime? @map("read_at")
+
+  message Message @relation(fields: [messageId], references: [id])
+  instructor Instructor @relation(fields: [instructorId], references: [userId])
+
+  @@map("메시지 수신자")
+
+  @@index([instructorId], map: "메시지수신_instructor_idx")
+}

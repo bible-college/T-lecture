@@ -1,0 +1,45 @@
+enum AssignmentCategory {
+  Temporary
+  Confirmed
+  @@map("배치분류__t")
+}
+
+model InstructorAvailability {
+  id           Int       @id @default(autoincrement())
+  instructorId Int       @map("강사id")
+  availableOn  DateTime? @map("가능일") // DB가 DATE면 @db.Date 사용 가능
+
+  instructor Instructor @relation(fields: [instructorId], references: [userId])
+
+  @@map("강사가능일")
+  @@unique([instructorId, availableOn], map: "강사가능일_instructor_date_unique")
+  @@index([instructorId], map: "강사가능일_instructor_idx")
+}
+
+model LectureInstructorAssignment  {
+  instructorId Int @map("강사id")
+  unitdateId       Int @map("부대일정id")
+  category     AssignmentCategory? @map("배치분류")
+
+  instructor Instructor @relation(fields: [instructorId], references: [userId])
+  schedule   UnitSchedule @relation(fields: [unitdateId], references: [id])
+
+  @@map("강사-부대 배정")
+
+  @@id([unitId, instructorId])
+  @@unique([unitdateId, instructorId], map: "assignment_instructor_schedule_unique")
+}
+
+
+model InstructorUnitDistance {
+  instructorId Int      @map("userid")
+  unitId       Int      @map("부대id")
+  distance     Decimal? @map("거리")
+
+  instructor Instructor @relation(fields: [instructorId], references: [userId])
+  unit       Unit       @relation(fields: [unitId], references: [id])
+
+  @@map("강사-부대 거리")
+  @@id([instructorId, unitId])
+  @@index([unitId], map: "distance_unit_idx")
+}

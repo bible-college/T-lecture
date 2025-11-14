@@ -1,89 +1,10 @@
-// server/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mysql"          
   url      = env("DATABASE_URL")
 }
 
-// 사용자 역할 (관리자 / 강사)
-enum UserRole {
-  ADMIN      // 관리자
-  INSTRUCTOR // 강사
-}
-
-// 강사 유형 (주강사 / 부강사 / 보조강사)
-enum InstructorType {
-  MAIN      // 주강사
-  SUB       // 부강사
-  ASSISTANT // 보조강사
-}
-
-// 사용자 계정 상태 (승인 대기, 승인됨, 비활성화됨)
-enum UserStatus {
-  PENDING     // 관리자 승인 대기
-  APPROVED    // 승인됨
-  DEACTIVATED // 비활성화됨
-}
-
-// =========================================
-// 👤 사용자 (User) - 강사 및 관리자
-// =========================================
-model User {
-  id            Int     @id @default(autoincrement())
-  email         String  @unique // 이메일/ID (로그인용)
-  password      String  // 비밀번호 (반드시 해시하여 저장)
-  name          String  // 이름
-  contactNumber String? // 연락처
-  address       String? // 거주지 주소
-  addressLat    Float?  // 거주지 위도 (지도 기능)
-  addressLng    Float?  // 거주지 경도 (지도 기능)
-  hasCar        Boolean @default(false) // 자차 여부
-
-  // [요청사항 반영]
-  role           UserRole       @default(INSTRUCTOR) // 관리자/강사 구분
-  instructorType InstructorType? // 강사 유형 (주/부/보조) - 강사일 경우에만 해당
-  status         UserStatus     @default(PENDING)   // 계정 상태 (승인 대기 등)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 다른 모델(Batch, Assignment 등)과의 관계는 추후 추가
-}
-
-// =========================================
-// 📍 강의장소 (Lecture Location)
-// =========================================
-model LectureLocation {
-  id                       Int      @id @default(autoincrement())
-  unitName                 String   // 부대명
-  address                  String   // 주소
-  contactPerson            String   // 부대 담당자명
-  contactNumber            String   // 담당자번호
-  isCateringAvailable      Boolean  @default(false) // 수탁급식여부
-  isAccommodationAvailable Boolean  @default(false) // 회관숙식여부
-  restAreaNotes            String?  // 강사 휴게실 및 여자 화장실 여부 (단순 O/X보다 상세 정보가 필요할 수 있어 String 추천)
-
-  dailyDetails             DailyEducationDetail[]   // 1:N 관계 설정
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// =========================================
-// 📅 일자별 교육 세부정보 (Daily Education Detail)
-// =========================================
-model DailyEducationDetail {
-  id                Int      @id @default(autoincrement())
-  date              DateTime // 📅 강의 가는 날짜
-  traineeCount      Int      // 👥 교육 인원
-  facilityNote      String?  // 📝 비고 (TV, 마이크 등 변동사항)
-  specificLocation  String?
-  lectureLocationId Int
-  lectureLocation   LectureLocation @relation(fields: [lectureLocationId], references: [id], onDelete: Cascade)
-
-  @@unique([lectureLocationId, date])
-}
+prismaSchemaFolder = "./models"
