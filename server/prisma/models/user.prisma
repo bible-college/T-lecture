@@ -46,7 +46,7 @@ model Instructor {
 
 model Team {
   id   Int     @id @default(autoincrement())
-  name String? @map("team_name") @db.VarChar(191)
+  name String? @map("team_name") 
 
   instructors Instructor[]
 
@@ -55,7 +55,7 @@ model Team {
 
 model InstructorLevel {
   id   Int     @id @default(autoincrement())
-  name String? @map("강사등급") @db.VarChar(191)
+  name String? @map("강사등급")
 
   instructors Instructor[]
 
@@ -64,7 +64,7 @@ model InstructorLevel {
 
 model Virtue {
   id   Int     @id @default(autoincrement())
-  name String? @map("덕목") @db.VarChar(191)
+  name String? @map("덕목") 
 
   instructorVirtues InstructorVirtue[]
 

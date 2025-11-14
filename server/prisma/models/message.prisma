@@ -38,6 +38,6 @@ model MessageReceipt {
   instructor Instructor @relation(fields: [instructorId], references: [userId])
 
   @@map("메시지 수신자")
-
+  @@id([instructorId, messageId])
   @@index([instructorId], map: "메시지수신_instructor_idx")
 }

@@ -26,7 +26,7 @@ model LectureInstructorAssignment  {
 
   @@map("강사-부대 배정")
 
-  @@id([unitId, instructorId])
+  @@id([unitdateId, instructorId])
   @@unique([unitdateId, instructorId], map: "assignment_instructor_schedule_unique")
 }
 

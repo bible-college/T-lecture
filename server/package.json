@@ -7,6 +7,9 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "prisma": {
+    "schema": "./prisma"
+  },
   "scripts": {
     "dev": "nodemon src/server.js",
     "build": "prisma generate",
@@ -16,7 +19,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.3.1",
+    "@prisma/client": "^6.19.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -25,6 +28,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.9",
-    "prisma": "^6.3.1"
+    "prisma": "^6.19.0"
   }
 }

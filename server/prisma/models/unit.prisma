@@ -6,7 +6,7 @@ enum MilitaryType {
 
 model Unit {
   id            Int       @id @default(autoincrement())
-  unitType      UnitType? @map("군구분")
+  unitType      MilitaryType? @map("군구분")
   name          String?   @map("부대명")
   wideArea      String?   @map("광역")
   region        String?   @map("지역")
