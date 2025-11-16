@@ -1,7 +1,8 @@
 // src/api/v1/index.js
 const express = require('express');
 const userRoutes = require('./user.routes');
-const locationRoutes = require('./location.routes');
+const unitRoutes = require('./unit.routes');
+const distanceRoutes = require('./distance.routes');
 
 const router = express.Router();
 
@@ -9,6 +10,9 @@ const router = express.Router();
 router.use('/users', userRoutes);
 
 // /api/v1/locations
-router.use('/locations', locationRoutes);
+router.use('/units', unitRoutes);
+
+// /api/v1/distances
+router.use('/distances', distanceRoutes);
 
 module.exports = router;

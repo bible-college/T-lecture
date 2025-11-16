@@ -1,6 +1,5 @@
 // web/server/src/modules/user/repositories/user.repository.js
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../../../libs/prisma');
 
 // 응답 시 제외할 필드 정의 (보안)
 const userSelectOptions = {

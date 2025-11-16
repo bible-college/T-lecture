@@ -29,7 +29,9 @@ model Instructor {
   levelId       Int?     @map("강사등급id")
   generation    Int?     @map("기수") @db.SmallInt
   restrictedArea String? @map("제한지역") @db.Text
-
+  lat      Float?  @map("위도")
+  lng      Float?  @map("경도")
+  
   // relations
   user   User                @relation(fields: [userId], references: [id])
   team   Team?               @relation(fields: [teamId], references: [id])

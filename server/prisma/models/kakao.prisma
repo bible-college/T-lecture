@@ -1,0 +1,7 @@
+model KakaoApiUsage {
+  date         DateTime @id @db.Date
+  routeCount   Int      @default(0) // 길찾기 호출 수
+  geocodeCount Int      @default(0) // 주소->좌표 호출 수
+
+  @@map("kakao_api_usage")
+}
