@@ -50,9 +50,11 @@ Prisma ORM을 사용하여 정의된 스키마(`schema.prisma`)를 실행 중인
 ```bash
 # T-lecture/server 폴더로 이동
 cd server
-
 # DB 스키마 반영 및 Prisma Client 재생성
-npm run db:push
+npm run db:migrate # 후에 엔터
+
+# 만약 db 초기화 할 일이 생길경우
+npx prisma migrate reset # yes 나오면 y
 ```
 
 -----
