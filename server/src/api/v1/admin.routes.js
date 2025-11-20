@@ -22,4 +22,8 @@ router.patch('/users/:userId/approve', adminController.approveUser);
 // [신규] 내 정보 조회 (GET /api/v1/admin/me)
 router.get('/me', adminController.getMe);
 
+// [신규] 승인 거절 (DELETE /api/v1/admin/users/:userId/reject)
+// 데이터를 삭제하므로 DELETE 메서드를 사용하는 것이 적절합니다.
+router.delete('/users/:userId/reject', adminController.rejectUser);
+
 module.exports = router;

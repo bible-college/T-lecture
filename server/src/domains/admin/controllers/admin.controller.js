@@ -94,3 +94,48 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// [유저 승인 거절] (데이터 삭제)
+exports.rejectUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const id = Number(userId);
+
+    // 1. 유저 존재 및 상태 확인
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { instructor: true }, // 강사 정보 존재 여부 확인
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // (선택) '승인 대기' 상태인 경우에만 거절 가능하도록 제한
+    if (user.status !== 'PENDING') {
+      return res.status(400).json({ error: '승인 대기 중인 사용자만 거절할 수 있습니다.' });
+    }
+
+    // 2. 데이터 삭제 (트랜잭션 사용)
+    // 강사(Instructor) 테이블이 User를 참조하고 있으므로, 강사 정보를 먼저 지워야 합니다.
+    // (단, 스키마에 onDelete: Cascade가 설정되어 있다면 user만 지워도 되지만, 안전을 위해 명시적으로 처리합니다)
+    await prisma.$transaction(async (tx) => {
+      // 강사 정보가 있다면 먼저 삭제
+      if (user.instructor) {
+        await tx.instructor.delete({
+          where: { userId: id },
+        });
+      }
+
+      // 유저 정보 삭제
+      await tx.user.delete({
+        where: { id },
+      });
+    });
+
+    res.json({ message: '회원가입 요청을 거절하고 데이터를 삭제했습니다.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '거절 처리에 실패했습니다.' });
+  }
+};
