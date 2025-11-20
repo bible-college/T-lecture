@@ -1,6 +1,7 @@
 // server/src/api/v1/distance.routes.js
 const express = require('express');
-const distanceController = require('../../modules/distance/controllers/distance.controller');
+// [수정 전] require('../../modules/distance/controllers/distance.controller');
+const distanceController = require('../../domains/distance/controllers/distance.controller');
 const router = express.Router();
 
 router.post('/calculate', distanceController.calculateDistance);
