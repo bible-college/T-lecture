@@ -63,3 +63,17 @@ exports.replaceAvailabilities = async (instructorId, startDate, endDate, newDate
     }
   });
 };
+
+exports.findActiveInstructors = async () => {
+  return prisma.instructor.findMany({
+    where: {
+      user: {
+        role: 'INSTRUCTOR',
+        status: 'APPROVED',
+      }
+    },
+    include: {
+      user: true,     // 필요 시 사용자 정보 포함
+    }
+  });
+};
