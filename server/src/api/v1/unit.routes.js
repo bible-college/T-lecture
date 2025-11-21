@@ -1,7 +1,7 @@
 // server/src/api/v1/unit.routes.js
 const express = require('express');
 const router = express.Router();
-const unitController = require('../../modules/unit/controllers/unit.controller');
+const unitController = require('../../domains/unit/controllers/unit.controller');
 
 // POST /api/v1/units
 router.post('/', unitController.createUnit);

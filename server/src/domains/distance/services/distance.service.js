@@ -5,7 +5,7 @@ const kakaoUsageRepository = require('../repositories/kakaoUsage.repository');
 const instructorRepository = require('../../instructor/repositories/instructor.repository');
 const unitRepository = require('../../unit/repositories/unit.repository');
 
-const kakaoService = require('../../../infra/kakao/kakao.service');
+const kakaoService = require('../../../infra/kakao.service');
 
 const MAX_ROUTE_PER_DAY = 9000;
 const MAX_GEOCODE_PER_DAY = 900;

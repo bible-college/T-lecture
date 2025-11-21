@@ -19,6 +19,7 @@ model User {
   instructor      Instructor?
   messageReceipts MessageReceipt[]
   unitAssignments InstructorUnitAssignment[]
+  
 
   @@map("user")
 }
@@ -94,3 +95,4 @@ model InstructorStats {
 
   @@map("instructor_stats")
 }
+

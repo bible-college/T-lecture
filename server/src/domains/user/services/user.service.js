@@ -1,6 +1,7 @@
 // web/server/src/modules/user/services/user.service.js
 const userRepository = require('../repositories/user.repository');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const saltRounds = 10;
 
 // (Helper) 응답 객체에서 비밀번호 필드 제거

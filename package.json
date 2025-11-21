@@ -4,5 +4,9 @@
   "scripts": {
     "dev:client": "npm run dev --prefix client",
     "dev:server": "npm run dev --prefix server"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "react-calendar": "^6.0.0"
   }
 }
