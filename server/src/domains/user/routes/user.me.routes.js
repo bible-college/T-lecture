@@ -1,19 +1,16 @@
-// domains/user/routes/user.me.routes.js
+// web/server/src/domains/user/routes/user.me.routes.js
 const express = require('express');
 const router = express.Router();
+const userMeController = require('../controllers/user.me.controller');
+const { auth } = require('../../../common/middlewares');
 
-const auth = require('../../../common/middlewares/auth');
-const controller = require('../controllers/user.me.controller');
+// [내 정보 조회] - 로그인 필요
+router.get('/me', auth, userMeController.getMyProfile);
 
-// ✅ 내 프로필 조회
-// GET /api/v1/users/me
-router.get('/me', auth, controller.getMyProfile);
+// [내 정보 수정] - 로그인 필요
+router.patch('/me', auth, userMeController.updateMyProfile);
 
-// ✅ 내 프로필 수정 (이름, 연락처 등)
-// PATCH /api/v1/users/me
-router.patch('/me', auth, controller.updateMyProfile);
-
-// 필요하면 나중에 비밀번호 변경 같은 것도 여기 추가 가능
-// router.patch('/me/password', auth, controller.changeMyPassword);
+// [회원 탈퇴] - 로그인 필요
+router.delete('/me', auth, userMeController.withdraw);
 
 module.exports = router;

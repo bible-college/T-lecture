@@ -1,29 +1,9 @@
-// modules/instructor/repositories/instructor.repository.js
+// web/server/src/domains/instructor/repositories/instructor.repository.js
 const prisma = require('../../../libs/prisma');
 
-exports.findAll = async () => {
-    return prisma.instructor.findMany();
-};
-
-exports.findById = async (userId) => {
-    return prisma.instructor.findUnique({
-        where: { userId: Number(userId) },
-        include: {
-        user: true,
-        virtues: true,
-        availabilities: true
-        }
-    });
-};
-
-exports.updateCoords = async (userId, lat, lng) => {
-    return prisma.instructor.update({
-        where: { userId: Number(userId) },
-        data: { lat, lng }
-    });
-};
-
-// [신규] 특정 기간의 근무 가능일 조회
+/**
+ * [기존] 특정 기간의 근무 가능일 조회
+ */
 exports.findAvailabilities = async (instructorId, startDate, endDate) => {
   return await prisma.instructorAvailability.findMany({
     where: {
@@ -37,8 +17,9 @@ exports.findAvailabilities = async (instructorId, startDate, endDate) => {
   });
 };
 
-// [신규] 근무 가능일 일괄 업데이트 (덮어쓰기)
-// 해당 월의 기존 데이터를 싹 지우고, 새 날짜들을 입력하는 트랜잭션 방식입니다.
+/**
+ * [기존] 근무 가능일 일괄 업데이트 (덮어쓰기)
+ */
 exports.replaceAvailabilities = async (instructorId, startDate, endDate, newDates) => {
   return await prisma.$transaction(async (tx) => {
     // 1. 해당 기간의 기존 데이터 삭제
@@ -52,14 +33,112 @@ exports.replaceAvailabilities = async (instructorId, startDate, endDate, newDate
       },
     });
 
-    // 2. 새 날짜 데이터 생성 (날짜가 있을 경우에만)
+    // 2. 새 날짜 데이터 생성
     if (newDates.length > 0) {
       await tx.instructorAvailability.createMany({
         data: newDates.map((date) => ({
           instructorId: Number(instructorId),
-          availableOn: new Date(date), // "2025-03-15" 문자열 -> Date 객체 변환
+          availableOn: new Date(date),
         })),
       });
     }
+  });
+};
+
+// ==========================================
+// [신규] 배정(Assignment) 관련 메서드
+// ==========================================
+
+/**
+ * [신규] 특정 기간 내 활성화된(Active) 배정 날짜 목록 조회
+ * - 가능일 수정 시, 이미 배정된 날짜를 삭제하지 못하게 하기 위함
+ */
+exports.findActiveAssignmentsDate = async (instructorId, startDate, endDate) => {
+  const assignments = await prisma.instructorUnitAssignment.findMany({
+    where: {
+      userId: Number(instructorId),
+      state: 'Active', // 취소되지 않은 배정만
+      UnitSchedule: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+    },
+    select: {
+      UnitSchedule: {
+        select: { date: true },
+      },
+    },
+  });
+
+  // 날짜 배열로 변환하여 반환
+  return assignments.map((a) => a.UnitSchedule.date);
+};
+
+/**
+ * [신규] 강사의 배정 목록 조회 (필터링 지원)
+ * - 근무 이력 (past + confirmed)
+ * - 배정 목록 (future + active)
+ */
+exports.findAssignments = async (instructorId, whereCondition) => {
+  return await prisma.instructorUnitAssignment.findMany({
+    where: {
+      userId: Number(instructorId),
+      ...whereCondition,
+    },
+    include: {
+      UnitSchedule: {
+        include: {
+          unit: true, // 부대 정보
+        },
+      },
+    },
+    orderBy: {
+      UnitSchedule: {
+        date: 'asc',
+      },
+    },
+  });
+};
+
+/**
+ * [신규] 특정 배정 건 조회 (단건)
+ * - 상세 조회 및 응답 처리용
+ */
+exports.findAssignmentByScheduleId = async (instructorId, unitScheduleId) => {
+  return await prisma.instructorUnitAssignment.findUnique({
+    where: {
+      assignment_instructor_schedule_unique: {
+        userId: Number(instructorId),
+        unitScheduleId: Number(unitScheduleId),
+      },
+    },
+    include: {
+      UnitSchedule: {
+        include: {
+          unit: {
+            include: {
+              trainingLocations: true, // 교육장소 정보 (상세용)
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+/**
+ * [신규] 배정 상태 업데이트 (수락/거절)
+ */
+exports.updateAssignment = async (instructorId, unitScheduleId, data) => {
+  return await prisma.instructorUnitAssignment.update({
+    where: {
+      assignment_instructor_schedule_unique: {
+        userId: Number(instructorId),
+        unitScheduleId: Number(unitScheduleId),
+      },
+    },
+    data,
   });
 };

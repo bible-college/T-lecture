@@ -3,30 +3,49 @@ const prisma = require('../../../libs/prisma');
 
 class AdminRepository {
   /**
-   * 승인 대기(PENDING) 상태인 유저 목록 조회
+   * [신규] 전체 유저 목록 조회 (필터링 지원)
+   * - 관리자용 목록 조회는 이곳에서 전담합니다.
    */
-  async findPendingUsers() {
+  async findAll(filters = {}) {
+    const { role, status, name } = filters;
+    
+    // 동적 쿼리 생성
+    const where = {};
+    if (role) where.role = role;
+    if (status) where.status = status;
+    if (name) where.name = { contains: name }; // 이름 부분 검색
+
     return await prisma.user.findMany({
-      where: { status: 'PENDING' },
-      include: { instructor: true }, // 강사 정보 확인용
-      orderBy: { id: 'desc' },
+      where,
+      orderBy: { id: 'desc' }, // 최신 가입순 정렬
+      include: { instructor: true }, // 강사 여부 확인
     });
   }
 
   /**
-   * 특정 유저 조회 (Admin 로직용, 전체 필드 접근)
+   * [기존] 다중 유저 상태 일괄 업데이트
+   * - 주로 '일괄 승인' 기능에 사용됩니다.
    */
-  async findById(id) {
-    return await prisma.user.findUnique({
-      where: { id: Number(id) },
-      include: { instructor: true },
+  async updateUsersStatusBulk(ids, status) {
+    return await prisma.user.updateMany({
+      where: {
+        id: { in: ids },
+      },
+      data: { status },
     });
   }
 
   /**
-   * 유저 정보 업데이트
+   * [기존] 단일 유저 상태 업데이트
+   * - 주로 '단일 승인' 기능에 사용됩니다.
    */
-  async updateUser(id, data) {
+  async updateUserStatus(id, status, role) {
+    const data = { status };
+    // 역할 변경이 요청된 경우 함께 업데이트
+    if (role) {
+      data.role = role;
+    }
+
     return await prisma.user.update({
       where: { id: Number(id) },
       data,
@@ -34,66 +53,22 @@ class AdminRepository {
   }
 
   /**
-   * 다중 유저 상태 일괄 업데이트
+   * [기존] 다중 유저 삭제 (일괄 거절용)
+   * - 관리자 전용 기능이므로 AdminRepository에 유지합니다.
    */
-  async updateUsersStatusBulk(ids, status) {
-    return await prisma.user.updateMany({
-      where: {
-        id: { in: ids },
-        status: 'PENDING', // 현재 '승인 대기' 상태인 유저만 대상
-      },
-      data: { status },
-    });
-  }
-
-  /**
-   * 유저 및 관련 강사 정보 삭제 (트랜잭션)
-   */
-  async deleteUserWithInstructor(id) {
+  async deleteUsersBulk(ids) {
     return await prisma.$transaction(async (tx) => {
-      // 강사 정보 삭제 (존재 시)
+      // 1. 연관된 강사 데이터 삭제
       await tx.instructor.deleteMany({
-        where: { userId: Number(id) },
+        where: { userId: { in: ids } },
       });
-
-      // 유저 정보 삭제
-      return await tx.user.delete({
-        where: { id: Number(id) },
+      
+      // 2. 유저 데이터 삭제
+      const result = await tx.user.deleteMany({
+        where: { id: { in: ids } },
       });
-    });
-  }
-
-  /**
-   * 다중 유저 및 관련 강사 정보 일괄 삭제 (트랜잭션)
-   */
-  async deleteUsersWithInstructorBulk(ids) {
-    return await prisma.$transaction(async (tx) => {
-      // 1. 삭제 대상 ID 필터링 ('PENDING' 상태인 유저만)
-      const targets = await tx.user.findMany({
-        where: {
-          id: { in: ids },
-          status: 'PENDING',
-        },
-        select: { id: true },
-      });
-
-      const targetIds = targets.map((u) => u.id);
-
-      if (targetIds.length === 0) {
-        return { count: 0 };
-      }
-
-      // 2. 연관된 강사 데이터(Instructor) 먼저 삭제
-      await tx.instructor.deleteMany({
-        where: { userId: { in: targetIds } },
-      });
-
-      // 3. 유저 데이터(User) 삭제
-      const deletedUsers = await tx.user.deleteMany({
-        where: { id: { in: targetIds } },
-      });
-
-      return deletedUsers;
+      
+      return result;
     });
   }
 }
