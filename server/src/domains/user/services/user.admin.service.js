@@ -1,6 +1,6 @@
 // web/server/src/domains/admin/services/admin.service.js
-const adminRepository = require('../repositories/admin.repository');
-const userRepository = require('../../user/repositories/user.repository'); // 단일 조회/삭제 재사용
+const adminRepository = require('../../user/repositories/user.admin.repository');
+const userRepository = require('../repositories/user.repository'); // 단일 조회/삭제 재사용
 
 class AdminService {
   /**

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 
-const instructorController = require('../../domains/instructor/controllers/instructor.controller');
+const instructorController = require('../../instructor/controllers/instructor.controller');
 const { auth, requireRole } = require('../../common/middlewares');
 
 // [수정] 미들웨어를 각 API 엔드포인트에 개별 적용

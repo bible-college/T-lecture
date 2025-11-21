@@ -1,5 +1,5 @@
 // web/server/src/domains/admin/controllers/admin.controller.js
-const adminService = require('../services/admin.service');
+const adminService = require('../../user/services/user.admin.service');
 
 // [신규] 전체 유저 목록 조회 (검색/필터)
 exports.getUsers = async (req, res) => {

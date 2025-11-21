@@ -1,7 +1,7 @@
 // web/server/src/api/v1/admin.routes.js
 const express = require('express');
 const router = express.Router();
-const adminController = require('../../domains/admin/controllers/admin.controller');
+const adminController = require('../../user/controllers/user.admin.controller');
 const { auth, requireRole } = require('../../common/middlewares');
 
 // ==========================================
