@@ -1,58 +1,35 @@
-// web/server/src/modules/user/repositories/user.repository.js
 const prisma = require('../../../libs/prisma');
 
-// 응답 시 제외할 필드 정의 (보안)
-const userSelectOptions = {
-  id: true,
-  email: true,
-  name: true,
-  contactNumber: true,
-  address: true,
-  addressLat: true,
-  addressLng: true,
-  hasCar: true,
-  role: true,
-  instructorType: true,
-  status: true,
-  createdAt: true,
-  updatedAt: true,
-};
-
-exports.create = async (userData) => {
-  return await prisma.user.create({
-    data: userData,
-  });
-};
-
-exports.findAll = async () => {
-  return await prisma.user.findMany({
-    select: userSelectOptions,
-  });
-};
-
-exports.findById = async (id) => {
-  return await prisma.user.findUnique({
-    where: { id: parseInt(id) },
-    select: userSelectOptions,
-  });
-};
-
-exports.update = async (id, userData) => {
-  return await prisma.user.update({
-    where: { id: parseInt(id) },
-    data: userData,
-  });
-};
-
-exports.delete = async (id) => {
-  return await prisma.user.delete({
-    where: { id: parseInt(id) },
-  });
-};
-
-// (로그인 시 사용) 비밀번호 포함하여 이메일로 찾기
+// 1. 이메일로 사용자 찾기 (로그인, 중복확인용)
 exports.findByEmail = async (email) => {
   return await prisma.user.findUnique({
-    where: { email },
+    where: { userEmail: email },
+    include: { instructor: true }, // 강사 정보 확인용
+  });
+};
+
+// 2. ID로 사용자 찾기 (내 정보 조회용)
+exports.findById = async (id) => {
+  return await prisma.user.findUnique({
+    where: { id: Number(id) },
+    // 민감 정보 제외 (비밀번호 등)
+    select: {
+      id: true,
+      userEmail: true,
+      name: true,
+      userphoneNumber: true,
+      role: true,
+      instructor: true,
+    },
+  });
+};
+
+// 3. 회원가입용 생성 (User + Instructor 동시 생성)
+exports.createUserWithInstructor = async (data) => {
+  return await prisma.user.create({
+    data: data,
+    include: {
+      instructor: true, // 생성 후 강사 정보도 반환 확인
+    },
   });
 };

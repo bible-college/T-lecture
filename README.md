@@ -31,7 +31,7 @@ PORT=3000
 
 # 로컬 개발용 MySQL 연결 URL (3306 포트 사용)
 # docker-compose.yml 파일의 환경 변수를 따름
-DATABASE_URL="mysql://root:root@localhost:3306/Project"
+DATABASE_URL="mysql://root:1234@localhost:3306/Project"
 ```
 
 #### B. MySQL 컨테이너 실행
