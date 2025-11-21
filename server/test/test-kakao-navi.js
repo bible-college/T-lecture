@@ -47,7 +47,6 @@ async function main() {
         now.getMonth(),
         now.getDate()
         ));
-
         const usage = await prisma.kakaoApiUsage.findUnique({
         where: { date: todayDate },
         });

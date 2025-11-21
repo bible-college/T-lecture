@@ -1,5 +1,4 @@
-// server/src/modules/distance/services/distance.service.js
-const distanceRepository = require('../repositories/distance.repository');
+const kakaoService = require('../../../infra/kakao/kakao.service');
 const kakaoUsageRepository = require('../repositories/kakaoUsage.repository');
 
 const instructorRepository = require('../../instructor/repositories/instructor.repository');

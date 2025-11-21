@@ -1,47 +1,60 @@
 const authService = require('../services/auth.service');
 
-exports.register = async (req, res) => {
+// [인증번호 발송]
+exports.sendCode = async (req, res) => {
   try {
-    // req.body: { email, password, name, role, address, ... }
-    const result = await authService.register(req.body);
-    res.status(201).json(result);
+    const { email } = req.body;
+    if (!email) throw new Error('이메일을 입력해주세요.');
+
+    const result = await authService.sendVerificationCode(email);
+    res.status(200).json(result);
   } catch (error) {
-    // 400 Bad Request: 중복 이메일, 주소 누락 등
     res.status(400).json({ error: error.message });
   }
 };
 
+// [인증번호 검증]
+exports.verifyCode = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) throw new Error('이메일과 인증번호를 입력해주세요.');
+
+    const result = await authService.verifyCode(email, code);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// [회원가입]
+exports.register = async (req, res) => {
+  try {
+    // body: { email, password, name, phoneNumber, role, address }
+    const result = await authService.register(req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// [로그인]
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const result = await authService.login(email, password);
     res.status(200).json(result);
   } catch (error) {
-    // 401 Unauthorized: 로그인 실패
     res.status(401).json({ error: error.message });
   }
 };
 
-// [신규] POST /forgot-password
-exports.forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) throw new Error('이메일을 입력해주세요.');
-
-    const result = await authService.forgotPassword(email);
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// [신규] POST /reset-password
+// [비밀번호 재설정]
 exports.resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
-    if (!token || !newPassword) throw new Error('잘못된 요청입니다.');
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) throw new Error('필수 정보를 입력해주세요.');
 
-    const result = await authService.resetPassword(token, newPassword);
+    const result = await authService.resetPassword(email, code, newPassword);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });

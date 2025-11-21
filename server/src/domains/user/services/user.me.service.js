@@ -1,33 +1,69 @@
-// domains/user/services/user.me.service.js
+//server/src/domains/user/services/user.me.service.js
 const userRepository = require('../repositories/user.repository');
-// 나중에 강사 직업정보까지 함께 수정하고 싶으면 이 서비스도 사용할 수 있음
-// const instructorService = require('../../instructor/instructor.service');
 
-exports.getMyProfile = async (userId) => {
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
+class UserMeService {
+    /**
+     * 내 프로필 조회 (관리자 포함 모든 유저 공용)
+     */
+    async getMyProfile(userId) {
+        const user = await userRepository.findById(userId);
+        if (!user) {
         throw new Error('사용자 정보를 찾을 수 없습니다.');
+        }
+
+        // 비밀번호 등 민감정보 제외하고 반환
+        const { password, ...profile } = user;
+        return profile;
     }
 
-    // 여기서 필요하면 응답 형태를 한번 더 가공
-    // 예: instructor 정보가 있어도 일부만 보내기 등
-    return user;
-};
+    /**
+     * 내 프로필 수정
+     * - 일반 유저: 이름, 전화번호 수정 가능
+     * - 강사: 주소(location)도 수정 가능
+     */
+    async updateMyProfile(userId, dto) {
+        const { name, phoneNumber, address } = dto;
 
-exports.updateMyProfile = async (userId, payload) => {
-  // 자기 자신이 수정 가능한 필드만 필터링
-    const { name, phoneNumber } = payload;
-    const dataToUpdate = {};
+        // 1. User 테이블 수정 데이터
+        const userData = {};
+        if (name) userData.name = name;
+        if (phoneNumber) userData.userphoneNumber = phoneNumber;
 
-    if (name !== undefined) dataToUpdate.name = name;
-    if (phoneNumber !== undefined) dataToUpdate.userphoneNumber = phoneNumber;
+        // 2. Instructor 테이블 수정 데이터 (강사인 경우)
+        const instructorData = {};
+        
+        // 현재 유저 정보 조회하여 강사 여부 확인
+        const user = await userRepository.findById(userId);
+        
+        if (user.role === 'INSTRUCTOR' && address) {
+        instructorData.location = address;
+        // 주소가 바뀌면 위도/경도(lat/lng)는 재계산이 필요하므로 null로 초기화
+        instructorData.lat = null;
+        instructorData.lng = null;
+        }
 
-    if (Object.keys(dataToUpdate).length === 0) {
-        // 변경할 게 없으면 그냥 현재 프로필 반환
-        return await userRepository.findById(userId);
+        // 3. 업데이트 실행
+        const updatedUser = await userRepository.update(userId, userData, instructorData);
+        
+        const { password, ...result } = updatedUser;
+        return result;
     }
 
-    const updated = await userRepository.update(userId, dataToUpdate);
-    return updated;
-};
+    /**
+     * [신규] 회원 탈퇴 (내 계정 삭제)
+     */
+    async withdraw(userId) {
+        // 존재 여부 확인
+        const user = await userRepository.findById(userId);
+        if (!user) {
+        throw new Error('사용자 정보를 찾을 수 없습니다.');
+        }
+
+        // 삭제 수행 (UserRepository의 공통 delete 메서드 사용)
+        await userRepository.delete(userId);
+
+        return { message: '회원 탈퇴가 완료되었습니다.' };
+    }
+}
+
+module.exports = new UserMeService();

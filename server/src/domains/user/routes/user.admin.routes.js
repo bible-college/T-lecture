@@ -1,26 +1,48 @@
-// domains/user/routes/user.admin.routes.js
+//server/src/api/v1/admin.routes.js
 const express = require('express');
 const router = express.Router();
-
+const adminController = require('../../user/controllers/user.admin.controller');
 const { auth, requireRole } = require('../../common/middlewares');
 
-// 이 아래로는 전부 관리자 전용
-router.use(auth, requireRole('ADMIN'));
+// ==========================================
+// 1. 회원 관리 (조회, 수정, 삭제)
+// ==========================================
 
-// ✅ 전체 유저 조회 (검색/필터는 나중에 query로 확장)
-router.get('/', controller.getUsers);
+// 전체 유저 목록 조회 (검색/필터)
+// GET /api/v1/admin/users
+router.get('/users', auth, requireRole('ADMIN'), adminController.getUsers);
 
-// ✅ 특정 유저 상세 조회
-router.get('/:id', controller.getUserById);
+// 승인 대기 목록 조회
+// GET /api/v1/admin/users/pending
+router.get('/users/pending', auth, requireRole('ADMIN'), adminController.getPendingUsers);
 
-// ✅ 유저 정보 수정 (이름/전화/role/status 등)
-router.patch('/:id', controller.updateUser);
+// 특정 유저 상세 조회
+// GET /api/v1/admin/users/:id
+router.get('/users/:id', auth, requireRole('ADMIN'), adminController.getUserById);
 
-// ✅ 유저 삭제 (필요하다면 사용)
-router.delete('/:id', controller.deleteUser);
+// 유저 정보 수정
+// PATCH /api/v1/admin/users/:id
+router.patch('/users/:id', auth, requireRole('ADMIN'), adminController.updateUser);
 
-// 나중에 승인/반려/role변경 등을 따로 두고 싶으면 이런 식으로 추가
-// router.patch('/:id/approve', controller.approveUser);
-// router.patch('/:id/role', controller.changeUserRole);
+// 유저 삭제
+// DELETE /api/v1/admin/users/:id
+router.delete('/users/:id', auth, requireRole('ADMIN'), adminController.deleteUser);
+
+
+// ==========================================
+// 2. 가입 승인/거절 워크플로우
+// ==========================================
+
+// 일괄 승인
+router.patch('/users/bulk-approve', auth, requireRole('ADMIN'), adminController.approveUsersBulk);
+
+// 단일 승인
+router.patch('/users/:userId/approve', auth, requireRole('ADMIN'), adminController.approveUser);
+
+// 일괄 거절
+router.delete('/users/bulk-reject', auth, requireRole('ADMIN'), adminController.rejectUsersBulk);
+
+// 단일 거절
+router.delete('/users/:userId/reject', auth, requireRole('ADMIN'), adminController.rejectUser);
 
 module.exports = router;
