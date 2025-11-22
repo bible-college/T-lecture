@@ -28,7 +28,6 @@ model User {
   userphoneNumber String?       @map("userphoneNumber")
   role            Role          @default(USER)
   status          UserStatus    @default(PENDING)
-  category        UserCategory? @map("분류")
 
   // Relations
   instructor      Instructor?
@@ -40,9 +39,9 @@ model User {
 
 model Instructor {
   userId         Int     @id @map("user_id")
+  category        UserCategory? @map("분류")
   teamId         Int?    @map("team_id")
   location       String? @db.Text
-  levelId        Int?    @map("강사등급id")
   generation     Int?    @map("기수") @db.SmallInt
   restrictedArea String? @map("제한지역") @db.Text
   lat            Float?  @map("위도")
@@ -51,7 +50,6 @@ model Instructor {
   // relations
   user  User             @relation(fields: [userId], references: [id])
   team  Team?            @relation(fields: [teamId], references: [id])
-  level InstructorLevel? @relation(fields: [levelId], references: [id])
 
   availabilities  InstructorAvailability[]
   virtues         InstructorVirtue[]
@@ -68,15 +66,6 @@ model Team {
   instructors Instructor[]
 
   @@map("team")
-}
-
-model InstructorLevel {
-  id   Int     @id @default(autoincrement())
-  name String? @map("강사등급")
-
-  instructors Instructor[]
-
-  @@map("강사등급")
 }
 
 model Virtue {
