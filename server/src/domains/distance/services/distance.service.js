@@ -1,4 +1,4 @@
-const kakaoService = require('../../../infra/kakao/kakao.service');
+const kakaoService = require('../../../infra/kakao.service');
 const kakaoUsageRepository = require('../repositories/kakaoUsage.repository');
 
 const distanceRepository = require('../repositories/distance.repository');
