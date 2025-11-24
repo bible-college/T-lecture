@@ -19,6 +19,6 @@ router.put('/availability', auth, requireRole('INSTRUCTOR'), instructorControlle
 // 강사 강의 가능 과목 조회
 // 강사 강의 가능 과목 수정
 
-
+// 일반 유저가 강사로 변경 시 필요 정보 입력 및 등록
 
 module.exports = router;
