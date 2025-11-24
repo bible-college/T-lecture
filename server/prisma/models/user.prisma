@@ -22,19 +22,30 @@ enum UserStatus {
 
 model User {
   id              Int           @id @default(autoincrement())
-  name            String?
-  userEmail       String?       @unique
+  userEmail       String?       @unique @map("user_email")
   password        String?
+  name            String?
   userphoneNumber String?       @map("userphoneNumber")
   role            Role          @default(USER)
   status          UserStatus    @default(PENDING)
 
   // Relations
   instructor      Instructor?
+  admin           Admin?
   messageReceipts MessageReceipt[]
   unitAssignments InstructorUnitAssignment[]
 
   @@map("user")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
+  level     Int      @default(1) // 예: 1=일반관리자, 9=슈퍼관리자
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
 }
 
 model Instructor {

@@ -33,4 +33,6 @@ router.use('/distances', distanceRoutes);
 // /api/v1/instructor
 router.use('/instructor', instructorRoutes); 
 
+app.use('/api/v1/instructor', assignmentRoutes);
+
 module.exports = router;
