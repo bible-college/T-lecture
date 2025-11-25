@@ -13,7 +13,7 @@ function App() {
         {/* Next.js의 _app.jsx에 있던 전역 레이아웃/Provider는 여기에 배치 */}
         <Routes>
             {/* 주소와 페이지 연결 */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LoginPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<SignupPage />} />
             

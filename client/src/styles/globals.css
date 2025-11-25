@@ -1,9 +1,5 @@
-/* client/src/styles/globals.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* 그 외 커스텀 스타일이 있다면 아래에 작성 */
 body {
-    background-color: #f3f4f6; /* 전체 배경 회색 처리 */
+  background-color: #f3f4f6;
 }

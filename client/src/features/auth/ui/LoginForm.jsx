@@ -1,94 +1,175 @@
-//client/src/features/auth/ui/LoginForm.jsx
+// src/features/auth/ui/LoginForm.jsx
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InputField } from '../../../shared/ui/InputField';
 import { Button } from '../../../shared/ui/Button';
-
+import { login as loginApi } from '../api/authApi';
 export const LoginForm = () => {
-    const navigate = useNavigate();
-    const [loginType, setLoginType] = useState('GENERAL'); 
-    const [formData, setFormData] = useState({ email: '', password: '' });
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        // 로그인 로직...
-        if (loginType === 'ADMIN') navigate('/admin');
-        else navigate('/');
-    };
+  // ADMIN = 관리자, GENERAL = 일반/강사
+  const [loginType, setLoginType] = useState('GENERAL');
 
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-            <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
-                
-                {/* 로고 영역 */}
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4 shadow-md">
-                        <span className="text-white text-2xl font-bold">BTF</span>
-                    </div>
-                    <h1 className="text-2xl font-bold text-gray-800">T-lecture</h1>
-                    <p className="text-gray-500 text-sm mt-1">Instructor Dispatch Automation System</p>
-                </div>
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
 
-                {/* 탭 버튼 */}
-                <div className="flex mb-8 border-b border-gray-200">
-                    <button
-                        className={`flex-1 py-3 text-center font-medium transition-colors ${
-                            loginType === 'GENERAL' ? 'border-b-2 border-green-500 text-green-600 font-bold' : 'text-gray-400 hover:text-gray-600'
-                        }`}
-                        onClick={() => setLoginType('GENERAL')}
-                    >
-                        일반 / 강사
-                    </button>
-                    <button
-                        className={`flex-1 py-3 text-center font-medium transition-colors ${
-                            loginType === 'ADMIN' ? 'border-b-2 border-green-500 text-green-600 font-bold' : 'text-gray-400 hover:text-gray-600'
-                        }`}
-                        onClick={() => setLoginType('ADMIN')}
-                    >
-                        관리자
-                    </button>
-                </div>
+  const [error, setError] = useState('');       // 토스트 메시지
+  const [loading, setLoading] = useState(false); // 로그인 시 로딩 상태
 
-                {/* 입력 폼 */}
-                <form onSubmit={handleSubmit} className="space-y-2">
-                    <InputField 
-                        label="아이디 (이메일)"
-                        placeholder="example@btf.or.kr"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    />
-                    <InputField 
-                        label="비밀번호"
-                        type="password"
-                        placeholder="비밀번호 입력"
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    />
-                    <div className="pt-4">
-                        <Button type="submit" fullWidth variant="primary">
-                            {loginType === 'ADMIN' ? '관리자 로그인' : '로그인'}
-                        </Button>
-                    </div>
-                </form>
-                
-                <div className="mt-6 text-center text-sm text-gray-500 flex justify-center space-x-4">
-                    <span className="cursor-pointer hover:text-gray-700">아이디 찾기</span>
-                    <span className="border-r border-gray-300 h-4 self-center"></span>
-                    <span className="cursor-pointer hover:text-gray-700">비밀번호 찾기</span>
-                    {loginType !== 'ADMIN' && (
-                        <>
-                            <span className="border-r border-gray-300 h-4 self-center"></span>
-                            <span 
-                                onClick={() => navigate('/register')}
-                                className="font-bold text-green-600 hover:text-green-700 cursor-pointer"
-                            >
-                                회원가입
-                            </span>
-                        </>
-                    )}
-                </div>
-            </div>
+  const handleChange = (field) => (e) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const data = await loginApi({
+        email: formData.email,
+        password: formData.password,
+        loginType, // "ADMIN" | "GENERAL"
+      });
+
+      // 토큰 / 유저 정보 저장 (필요 시 원하는 방식으로 변경 가능)
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+
+      // 로그인 타입 & 유저 속성에 따른 라우팅 분기
+      if (loginType === 'ADMIN') {
+        // 관리자 모드 로그인
+        navigate('/admin'); // 필요하면 /admin/dashboard 등으로 변경
+      } else {
+        // 일반 / 강사 모드 로그인
+        if (data.user?.isInstructor) {
+          navigate('/instructor'); // 강사용 메인 페이지
+        } else {
+          navigate('/'); // 일반 사용자 메인
+        }
+      }
+    } catch (err) {
+      setError(err.message || '로그인에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-10 text-center">
+        {/* 로고 영역 (로그인.html 구조 그대로) */}
+        <div className="mb-8">
+          <div className="w-16 h-16 bg-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white font-bold text-2xl">
+            BTF
+          </div>
+          <h1 className="text-xl font-bold text-gray-800 mb-1">
+            T-lecture
+          </h1>
+          <p className="text-sm text-gray-500">
+            Instructor Dispatch Automation System
+          </p>
         </div>
-    );
+
+        {/* 에러 토스트 메시지 */}
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded text-left">
+            {error}
+          </div>
+        )}
+
+        {/* 역할 선택 버튼: 관리자 / 일반·강사 */}
+        <div className="flex mb-6">
+          <button
+            type="button"
+            onClick={() => setLoginType('ADMIN')}
+            className={`flex-1 py-2 mx-1 rounded-md border text-sm font-semibold transition-colors
+              ${
+                loginType === 'ADMIN'
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
+              }`}
+          >
+            관리자
+          </button>
+          <button
+            type="button"
+            onClick={() => setLoginType('GENERAL')}
+            className={`flex-1 py-2 mx-1 rounded-md border text-sm font-semibold transition-colors
+              ${
+                loginType === 'GENERAL'
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
+              }`}
+          >
+            일반 / 강사
+          </button>
+        </div>
+
+        {/* 로그인 폼 */}
+        <form onSubmit={handleSubmit} className="text-left">
+          <div className="mb-4">
+            <InputField
+              label="아이디 (이메일)"
+              type="email"
+              placeholder="example@btf.or.kr"
+              value={formData.email}
+              onChange={handleChange('email')}
+              required
+            />
+          </div>
+
+          <div className="mb-2">
+            <InputField
+              label="비밀번호"
+              type="password"
+              placeholder="비밀번호를 입력하세요"
+              value={formData.password}
+              onChange={handleChange('password')}
+              required
+            />
+          </div>
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="primary"
+            disabled={loading}
+            className="mt-4"
+          >
+            {loading
+              ? '로그인 중...'
+              : loginType === 'ADMIN'
+              ? '관리자 로그인'
+              : '로그인'}
+          </Button>
+        </form>
+
+        {/* 하단 링크 (비밀번호 찾기 / 회원가입) */}
+        <div className="mt-6 flex justify-between text-xs text-gray-500">
+          <button
+            type="button"
+            className="hover:text-gray-700"
+            // TODO: 비밀번호 찾기 페이지 라우팅 연결
+          >
+            비밀번호 찾기
+          </button>
+
+          {loginType !== 'ADMIN' && (
+            <button
+              type="button"
+              onClick={() => navigate('/register')}
+              className="font-bold text-green-600 hover:text-green-700"
+            >
+              회원가입
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
