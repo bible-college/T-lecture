@@ -1,3 +1,5 @@
+// client/src/features/user/ui/InstructorDashboard.jsx
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../shared/ui/Button'; // 기존 버튼 재사용
