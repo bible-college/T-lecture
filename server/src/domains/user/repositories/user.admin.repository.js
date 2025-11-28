@@ -67,14 +67,37 @@ class AdminRepository {
    * 유저 삭제 (강사 정보도 함께)
    */
   async deleteUsersBulk(ids) {
+    const userIds = ids.map(Number);
+
     return await prisma.$transaction(async (tx) => {
-      await tx.instructor.deleteMany({
-        where: { userId: { in: ids } },
+      // 1. 강사 관련 자식 테이블 먼저 삭제
+      await tx.instructorVirtue.deleteMany({
+        where: { instructorId: { in: userIds } },
       });
 
-      return await tx.user.deleteMany({
-        where: { id: { in: ids } },
+      await tx.instructorAvailability.deleteMany({
+        where: { instructorId: { in: userIds } },
       });
+
+      await tx.instructorUnitDistance.deleteMany({
+        where: { instructorId: { in: userIds } },
+      }).catch(() => {});
+
+      await tx.instructorStats.deleteMany({
+        where: { instructorId: { in: userIds } },
+      }).catch(() => {});
+
+      // 2. instructor 행 삭제
+      await tx.instructor.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+
+      // 3. user 행 삭제 (admin은 onDelete: Cascade)
+      const result = await tx.user.deleteMany({
+        where: { id: { in: userIds } },
+      });
+
+      return result;
     });
   }
 

@@ -165,8 +165,11 @@ class AdminService {
     }
 
     async setAdminLevel(userId, level = 'GENERAL') {
-        if (!['GENERAL', 'SUPER'].includes(level)) {
-        throw new Error('잘못된 관리자 레벨입니다.');
+        if (level === 'SUPER') {
+            throw new Error('슈퍼 관리자로의 승급은 불가능합니다.');
+        }
+        if (level !== 'GENERAL') {
+            throw new Error('잘못된 관리자 레벨입니다.');
         }
 
         // 존재 여부 확인

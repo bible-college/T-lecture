@@ -44,15 +44,44 @@ class UserRepository {
   // [신규] 유저 삭제 (공통 - 본인 탈퇴 및 관리자 강제 삭제용)
   // 강사 테이블과 유저 테이블의 데이터를 트랜잭션으로 안전하게 삭제합니다.
   async delete(id) {
+    const userId = Number(id);
+
     return await prisma.$transaction(async (tx) => {
-      // 1. 연관된 강사 정보 먼저 삭제 (존재 시)
-      await tx.instructor.deleteMany({
-        where: { userId: Number(id) },
+      // 0. 강사 여부 확인 (없으면 그냥 스킵)
+      const instructor = await tx.instructor.findUnique({
+        where: { userId },
+        select: { userId: true },
       });
 
-      // 2. 유저 정보 삭제
+      if (instructor) {
+        // 1-1. 강사가능덕목(강사id FK) 먼저 삭제
+        await tx.instructorVirtue.deleteMany({
+          where: { instructorId: userId },
+        });
+
+        // 1-2. 근무 가능일(있다면) 삭제
+        await tx.instructorAvailability.deleteMany({
+          where: { instructorId: userId },
+        });
+
+        // 1-3. 거리, 통계 등 강사 FK 걸린 것들도 여기서 같이 정리
+        await tx.instructorUnitDistance.deleteMany({
+          where: { instructorId: userId },
+        }).catch(() => {}); // 스키마에 없으면 에러 방지용
+
+        await tx.instructorStats.deleteMany({
+          where: { instructorId: userId },
+        }).catch(() => {});
+
+        // 1-4. 마지막으로 instructor 행 삭제
+        await tx.instructor.deleteMany({
+          where: { userId },
+        });
+      }
+
+      // 2. user 행 삭제 (Admin은 onDelete: Cascade 라서 자동 정리)
       return await tx.user.delete({
-        where: { id: Number(id) },
+        where: { id: userId },
       });
     });
   }

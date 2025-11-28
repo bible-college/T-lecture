@@ -307,12 +307,8 @@ export const SuperAdminDashboard = () => {
                         </div>
                         <div className="flex flex-col gap-1 items-end">
                         {u.admin?.level !== 'SUPER' && (
-                            <button
-                            onClick={() => grantAdmin(u.id, 'SUPER')}
-                            className="text-[11px] px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
-                            >
-                            슈퍼로 승격
-                            </button>
+                            // 슈퍼 승격 버튼 제거됨
+                            null
                         )}
                         {u.admin?.level !== 'SUPER' && (
                             <button

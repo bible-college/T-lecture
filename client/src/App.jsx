@@ -7,8 +7,9 @@ import LoginPage from './pages/login';
 import SignupPage from './pages/SignupPage';
 import InstructorSchedulePage from './pages/schedule';
 import AdminPage from './pages/AdminPage';
-import InstructorPage from './pages/InstructorPage';
+import UserMainHome from './pages/userMainHome';
 import SuperAdminPage from './pages/SuperAdminPage';
+
 
 function App() {
     return (
@@ -22,7 +23,7 @@ function App() {
             <Route path="/instructor/schedule" element={<InstructorSchedulePage />} />
             <Route path="/admin/*" element={<AdminPage />} />
             <Route path="/admin/super" element={<SuperAdminPage />} />
-            <Route path="/instructor/*" element={<InstructorPage />} />
+            <Route path="/userHome/*" element={<UserMainHome />} />
             {/* 없는 주소 처리 (Redirect) */}
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
