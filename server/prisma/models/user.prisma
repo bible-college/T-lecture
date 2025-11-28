@@ -9,7 +9,7 @@ enum UserCategory {
 
 enum AdminLevel {
   GENERAL // 일반 관리자
-  SUPER   // 슈퍼 관리자
+  SUPER // 슈퍼 관리자
 }
 
 enum UserStatus {
@@ -37,8 +37,8 @@ model User {
 }
 
 model Admin {
-  id     Int @id @default(autoincrement())
-  userId Int @unique @map("user_id")
+  id     Int        @id @default(autoincrement())
+  userId Int        @unique @map("user_id")
   level  AdminLevel @default(GENERAL)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -50,6 +50,7 @@ model Instructor {
   userId           Int           @id @map("user_id")
   category         UserCategory? @map("분류")
   teamId           Int?          @map("team_id")
+  isTeamLeader     Boolean       @default(false) @map("팀장여부")
   location         String?       @db.Text
   generation       Int?          @map("기수") @db.SmallInt
   restrictedArea   String?       @map("제한지역") @db.Text

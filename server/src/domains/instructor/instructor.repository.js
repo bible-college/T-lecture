@@ -45,9 +45,8 @@ class InstructorRepository {
     return prisma.instructor.findMany({
       where: {
         user: {
-          role: 'INSTRUCTOR',
           status: 'APPROVED',
-        }
+        },
       },
       include: {
         user: true,

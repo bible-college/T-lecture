@@ -39,23 +39,28 @@ export const LoginForm = () => {
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('currentUser', JSON.stringify(data.user));
 
-      // 로그인 타입 & 유저 속성에 따른 라우팅 분기
-      if (loginType === 'ADMIN') {
-        // 관리자 모드 로그인
-        navigate('/admin'); // 필요하면 /admin/dashboard 등으로 변경
-      } else {
-        // 일반 / 강사 모드 로그인
-        if (data.user?.isInstructor) {
-          navigate('/instructor'); // 강사용 메인 페이지
+        if (loginType === 'ADMIN') {
+          // ✅ 관리자 탭 로그인일 때:
+          // SUPER → 슈퍼 전용 페이지, GENERAL → 일반 관리자 페이지
+          const level = data.user?.adminLevel;
+          if (level === 'SUPER') {
+            navigate('/admin/super');   // 관리자 권한 부여/회수 등
+          } else {
+            navigate('/admin');         // 일반 관리자 대시보드
+          }
         } else {
-          navigate('/'); // 일반 사용자 메인
+          // ✅ 일반 / 강사 탭 로그인
+          if (data.user?.isInstructor) {
+            navigate('/instructor');    // 강사 메인
+          } else {
+            navigate('/');              // 일반 사용자 메인
+          }
         }
+      } catch (err) {
+        setError(err.message || '로그인에 실패했습니다. 다시 시도해주세요.');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err.message || '로그인에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

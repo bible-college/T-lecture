@@ -8,7 +8,7 @@ import SignupPage from './pages/SignupPage';
 import InstructorSchedulePage from './pages/schedule';
 import AdminPage from './pages/AdminPage';
 import InstructorPage from './pages/InstructorPage';
-
+import SuperAdminPage from './pages/SuperAdminPage';
 
 function App() {
     return (
@@ -21,6 +21,7 @@ function App() {
             <Route path="/register" element={<SignupPage />} />
             <Route path="/instructor/schedule" element={<InstructorSchedulePage />} />
             <Route path="/admin/*" element={<AdminPage />} />
+            <Route path="/admin/super" element={<SuperAdminPage />} />
             <Route path="/instructor/*" element={<InstructorPage />} />
             {/* 없는 주소 처리 (Redirect) */}
             <Route path="*" element={<Navigate to="/" replace />} />
