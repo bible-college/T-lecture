@@ -80,11 +80,10 @@ export const SuperAdminDashboard = () => {
             if (!res.ok) throw new Error(data?.error || '승인 실패');
 
             setPendingUsers(prev => prev.filter(u => u.id !== userId));
-            // 서버가 user 객체를 돌려준다고 가정하고 목록에 추가
+            
             if (data.user) {
                 setUsers(prev => [...prev, data.user]);
             } else {
-                // 데이터가 없으면 새로고침 권장 (또는 리스트만 제거)
                 alert('승인되었습니다. (목록 갱신을 위해 새로고침이 필요할 수 있습니다)');
             }
         } catch (e) {
@@ -155,7 +154,7 @@ export const SuperAdminDashboard = () => {
     };
 
     // ---------------------------------------------------------
-    // 2. UI 렌더링 - 컴포넌트 조립 (깔끔해진 부분)
+    // 2. UI 렌더링 - 컴포넌트 조립
     // ---------------------------------------------------------
     return (
         <div className="min-h-screen bg-gray-100">
@@ -206,7 +205,6 @@ export const SuperAdminDashboard = () => {
                             renderActions={(u) => (
                                 <Button 
                                     size="xsmall" 
-                                    variant="primary" // 초록색 (Button.jsx 설정에 따라 다를 수 있음. 필요시 colorClass 직접 지정)
                                     className="bg-green-600 hover:bg-green-700 text-white border-none"
                                     onClick={() => grantAdmin(u.id, 'GENERAL')}
                                 >
@@ -231,7 +229,7 @@ export const SuperAdminDashboard = () => {
                             )}
                         />
 
-                        {/* 3) 승인 대기 섹션 (원래 4번째였으나 레이아웃상 중요해서 유지) */}
+                        {/* 3) 승인 대기 섹션 */}
                         <UserListSection 
                             title="📝 가입 신청 (승인 대기)"
                             users={pendingUsers}
@@ -256,14 +254,13 @@ export const SuperAdminDashboard = () => {
                             )}
                         />
 
-                        {/* 4) 현재 관리자 섹션 (하단 혹은 4번째 컬럼으로 배치) */}
+                        {/* 4) 현재 관리자 섹션 */}
                          <div className="lg:col-span-3 xl:col-span-1">
                             <UserListSection 
                                 title="🛡 현재 관리자"
                                 users={admins}
                                 emptyMessage="관리자가 없습니다."
                                 renderActions={(u) => {
-                                    // 슈퍼 관리자는 건드리지 못하게 처리
                                     if (u.admin?.level === 'SUPER') return null;
                                     return (
                                         <Button 
