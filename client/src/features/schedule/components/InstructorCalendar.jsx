@@ -24,33 +24,24 @@ export const InstructorCalendar = () => {
     <div className="w-full flex justify-center bg-white p-8">
       
       <style>{`
-        /* 1. 캘린더 전체 틀 */
+        /* 1. 캘린더 기본 틀 */
         .react-calendar {
           width: 100%;
           max-width: 1000px;
           background: white;
           border: 1px solid #e5e7eb;
-          font-family: 'Pretendard', -apple-system, sans-serif;
+          font-family: 'Pretendard', sans-serif;
           line-height: 1.5;
         }
 
-        /* 2. 상단 네비게이션 */
+        /* 2. 네비게이션 */
         .react-calendar__navigation {
           height: 60px;
-          margin-bottom: 0;
-          padding: 0 10px;
           border-bottom: 1px solid #e5e7eb;
         }
         .react-calendar__navigation button {
-          min-width: 44px;
-          background: none;
           font-size: 1.25rem;
           font-weight: 700;
-          color: #111827;
-        }
-        .react-calendar__navigation button:enabled:hover {
-          background-color: #f3f4f6;
-          border-radius: 8px;
         }
 
         /* 3. 요일 헤더 */
@@ -60,16 +51,23 @@ export const InstructorCalendar = () => {
           border-bottom: 1px solid #e5e7eb;
         }
         .react-calendar__month-view__weekdays__weekday {
-          text-align: center;
-          font-weight: 600;
-          font-size: 0.85rem;
           color: #6b7280;
-          text-decoration: none;
+          font-weight: 600;
+          text-decoration: none !important;
         }
-        abbr[title] { text-decoration: none; }
+        abbr { text-decoration: none !important; }
 
-        /* 4. 날짜 셀 (기본 격자) */
-        .react-calendar__tile {
+        /* ============================================================
+           ★ 문제 해결의 핵심 CSS ★
+           순서대로 적용되어야 평일/주말 색상 충돌이 없습니다.
+           ============================================================ */
+
+        /* [Step 1] 모든 날짜 타일의 기본 상태 (평일 기준) */
+        /* 선택되든(:focus), 활성화되든(.active) 무조건 흰색 배경/검은 글씨로 초기화 */
+        .react-calendar__tile,
+        .react-calendar__tile:enabled:hover,
+        .react-calendar__tile:enabled:focus,
+        .react-calendar__tile--active {
           height: 110px;
           display: flex;
           flex-direction: column;
@@ -77,39 +75,72 @@ export const InstructorCalendar = () => {
           padding: 12px;
           font-size: 1.05rem;
           font-weight: 500;
-          color: #374151;
-          background: white;
+          
+          /* ★ 평일이 파랗게 변하는 것을 막는 방어막 ★ */
+          background: white !important; 
+          color: #374151 !important;
+          
           border-right: 1px solid #f3f4f6;
           border-bottom: 1px solid #f3f4f6;
-          transition: background-color 0.1s;
+          border-radius: 0 !important; /* 배경 찌그러짐 방지 */
           
-          /* ⭐ 중요: 내부 요소 위치 잡기 위해 */
-          position: relative; 
-          z-index: 0; 
-          overflow: visible !important; /* 짤림 방지 */
-        }
-        
-        /* 4-1. 날짜 숫자(Text)를 맨 위로 올리기 */
-        .react-calendar__tile abbr {
           position: relative;
-          z-index: 2; /* 파란 상자보다 위에 오게 함 */
+          overflow: visible !important;
+          z-index: 0;
         }
+
+        /* [Step 2] 주말 색상 덮어쓰기 (가장 강력하게 !important) */
+        /* 위에서 흰색으로 밀어버렸으니, 주말은 다시 색을 입혀야 함 */
         
-        .react-calendar__tile:enabled:hover {
-          background-color: #f8fafc;
+        /* 일요일 */
+        .react-calendar__month-view__days__day--weekend,
+        .react-calendar__month-view__days__day--weekend:enabled:focus,
+        .react-calendar__month-view__days__day--weekend:enabled:hover {
+          background-color: #fff1f2 !important; /* 연한 빨강 */
+          color: #ef4444 !important;            /* 진한 빨강 */
         }
 
-        /* 이웃한 달 숨김 */
-        .react-calendar__month-view__days__day--neighboringMonth {
-          background-color: #fcfcfc !important;
-          color: transparent !important;
-          pointer-events: none !important;
+        /* 토요일 */
+        .react-calendar__month-view__days__day--weekend:not(:nth-child(7n)),
+        .react-calendar__month-view__days__day--weekend:not(:nth-child(7n)):enabled:focus,
+        .react-calendar__month-view__days__day--weekend:not(:nth-child(7n)):enabled:hover {
+          background-color: #f0f9ff !important; /* 연한 파랑 */
+          color: #2563eb !important;            /* 진한 파랑 */
         }
 
-        /* 오늘 날짜 */
-        .react-calendar__tile--now {
-          color: #2563eb !important;
+        /* [Step 3] 선택된 날짜 (Custom Logic) */
+        /* 배경색은 건드리지 않고(위의 흰색 or 주말색 유지), 테두리만 그림 */
+        
+        .react-calendar__tile.selected-date {
+          font-weight: 700;
+          /* 여기서 background를 설정하지 않음 -> 평일은 흰색, 주말은 주말색이 그대로 보임 */
         }
+
+        /* ★ 파란 테두리 그리기 ★ */
+        .react-calendar__tile.selected-date::before {
+          content: '';
+          position: absolute;
+          top: 6px; left: 6px; right: 6px; bottom: 6px;
+          
+          background-color: transparent !important; /* 채우기 없음 */
+          border: 2px solid #3b82f6;                /* 파란 테두리 */
+          border-radius: 12px;                      /* 테두리 둥글게 */
+          
+          z-index: 1;
+          pointer-events: none;
+        }
+
+        /* 체크 표시 */
+        .react-calendar__tile.selected-date::after {
+          content: '✔';
+          position: absolute;
+          bottom: 12px; right: 12px;
+          font-size: 1.1rem;
+          color: #2563eb;
+          z-index: 2;
+        }
+
+        /* 4. 오늘 날짜 (Today) */
         .react-calendar__tile--now:not(.selected-date)::after {
           content: 'TODAY';
           font-size: 0.65rem;
@@ -121,54 +152,15 @@ export const InstructorCalendar = () => {
           margin-top: 6px;
         }
 
-        /* ✅ [수정 완료] 선택된 날짜 (둥근 네모) */
-        .selected-date {
-          background: transparent !important; /* 타일 자체 배경은 투명 */
-          color: #1e40af !important;
-          font-weight: 700;
+        /* 기타 스타일 */
+        .react-calendar__month-view__days__day--neighboringMonth {
+          background-color: #fcfcfc !important;
+          color: transparent !important;
+          pointer-events: none !important;
         }
-
-        /* ⭐ 둥근 파란 상자를 그리는 가상 요소 */
-        .selected-date::before {
-          content: '';
-          position: absolute;
-          /* 상하좌우 6px씩 띄워서 안쪽으로 쏙 들어오게 함 */
-          top: 6px; left: 6px; right: 6px; bottom: 6px;
-          
-          background-color: #eff6ff; /* 연한 블루 */
-          border: 2px solid #3b82f6; /* 진한 블루 테두리 */
-          border-radius: 16px; /* ⭐ 둥근 모서리 (더 둥글게) */
-          
-          z-index: 1; /* 글자(abbr:2)보다는 아래, 타일바닥(0)보다는 위 */
-          box-shadow: 0 4px 6px -2px rgba(59, 130, 246, 0.2);
-        }
-
-        /* 체크 표시 */
-        .selected-date::after {
-          content: '✔';
-          position: absolute;
-          bottom: 12px;
-          right: 12px;
-          font-size: 1.1rem;
-          color: #2563eb;
+        .react-calendar__tile abbr {
+          position: relative;
           z-index: 2;
-        }
-
-        /* ✅ 주말 색상 (토/일 구분) */
-        /* 일요일: 타일 자체 배경색 변경 */
-        .react-calendar__month-view__days__day--weekend {
-          color: #ef4444; 
-          background-color: #fff1f2; 
-        }
-        /* 토요일 */
-        .react-calendar__month-view__days__day--weekend:not(:nth-child(7n)) {
-          color: #2563eb; 
-          background-color: #f0f9ff; 
-        }
-        
-        /* 선택된 날짜가 주말일 때 배경 겹침 해결 */
-        .selected-date.react-calendar__month-view__days__day--weekend {
-           background-color: transparent !important; /* 파란 상자가 보여야 하므로 투명 */
         }
       `}</style>
 
@@ -203,6 +195,8 @@ export const InstructorCalendar = () => {
         <div className="shadow-sm rounded-xl overflow-hidden border border-gray-200">
           <Calendar 
             onClickDay={handleDateClick}
+            /* 번쩍임 방지를 위해 null 유지 */
+            value={null}
             tileClassName={({ date }) => {
               const dateStr = format(date, 'yyyy-MM-dd');
               if (selectedDates.includes(dateStr)) return 'selected-date';
@@ -229,7 +223,7 @@ export const InstructorCalendar = () => {
             <span className="text-blue-400">토요일</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-eff6ff border-2 border-blue-500 rounded-lg shadow-sm relative">
+            <div className="w-5 h-5 bg-transparent border-2 border-blue-500 rounded-lg shadow-sm relative">
                 <span className="absolute bottom-0 right-0.5 text-blue-600 text-[10px]">✔</span>
             </div>
             <span className="font-bold text-blue-700">선택됨</span>
