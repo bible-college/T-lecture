@@ -42,10 +42,10 @@ exports.register = async (req, res) => {
 // [로그인]
 exports.login = async (req, res) => {
   try {
-    const { email, password, loginType } = req.body;
+    const { email, password, loginType, deviceId  } = req.body;
     
     // 서비스에서 AccessToken과 RefreshToken을 모두 받음
-    const result = await authService.login(email, password, loginType);
+    const result = await authService.login(email, password, loginType, deviceId );
 
     // 🍪 Refresh Token을 쿠키에 설정 (HttpOnly 보안 적용)
     res.cookie('refreshToken', result.refreshToken, {
@@ -83,14 +83,9 @@ exports.refresh = async (req, res) => {
 
 exports.logout = async (req, res) => {
   try {
-    // 1. 쿠키에서 리프레시 토큰 삭제
-    res.clearCookie('refreshToken');
-    
-    // 2. (선택적) DB에서 리프레시 토큰 삭제 (auth 미들웨어 통과 시 req.user.id 사용)
-    // 현재 로그아웃은 auth 미들웨어 전에 위치하므로 req.user는 없습니다.
-    // 하지만 쿠키 삭제만으로도 클라이언트는 더 이상 갱신을 요청할 수 없습니다.
-
-    res.status(200).json({ message: '로그아웃 성공' });
+    const { deviceId } = req.body;
+    await authService.logout(req.user.id, deviceId); // deviceId 전달
+    res.json({ message: "로그아웃 되었습니다." });
   } catch (error) {
     // 에러가 나더라도 쿠키는 지웠으므로, 성공 응답을 보냅니다.
     res.status(200).json({ message: '로그아웃 성공' });

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { logout } from '../../features/auth/api/authApi';
 
 /**
  * @param {string} title - 왼쪽 상단 제목
@@ -12,12 +13,18 @@ export const CommonHeader = ({ title, userLabel, links = [] }) => {
     const navigate = useNavigate();
     const location = useLocation(); // 현재 주소를 알아내서 활성화된 메뉴 강조용
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         if (window.confirm('정말 로그아웃 하시겠습니까?')) {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('userRole');
-            alert('로그아웃 되었습니다.');
-            navigate('/login');
+            try {
+                await logout(); // 서버 로그아웃 + 로컬스토리지 정리 실행
+                alert('로그아웃 되었습니다.');
+                navigate('/login');
+            } catch (error) {
+                console.error('로그아웃 실패:', error);
+                // 실패해도 로컬에서는 로그아웃 처리하는게 안전함
+                localStorage.clear(); 
+                navigate('/login');
+            }
         }
     };
 

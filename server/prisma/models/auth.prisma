@@ -16,9 +16,10 @@ model RefreshToken {
   userId    Int      @map("user_id")
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-
+  deviceId  String?
   // User와 연결 (User가 삭제되면 토큰도 삭제됨)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, deviceId])
   @@map("refresh_tokens")
 }

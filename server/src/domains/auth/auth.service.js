@@ -121,7 +121,7 @@ class AuthService {
   }
 
 
-  async login(email, password, loginType) {
+  async login(email, password, loginType, deviceId ) {
     const user = await userRepository.findByEmail(email);
     if (!user) throw new Error('가입되지 않은 이메일입니다.');
 
@@ -145,7 +145,7 @@ class AuthService {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7일 후
 
     // 3. 리프레시 토큰 저장 (레포지토리 사용)
-    await authRepository.saveRefreshToken(user.id, refreshToken, expiresAt);
+    await authRepository.saveRefreshToken(user.id, refreshToken, expiresAt, deviceId );
 
     // 4. 유저 정보 구성 (변수 선언 추가)
     const isInstructor = !!user.instructor;
@@ -199,9 +199,10 @@ class AuthService {
   }
 
   // [신규] 로그아웃 (DB에서 리프레시 토큰 삭제)
-  async logout(userId) {
+  async logout(userId, deviceId) {
     if (userId) {
-      await authRepository.deleteRefreshToken(userId);
+        // userId와 deviceId를 모두 넘겨서 구체적으로 삭제 요청
+        await authRepository.deleteRefreshToken(userId, deviceId);
     }
     return { message: '로그아웃 되었습니다.' };
   }
