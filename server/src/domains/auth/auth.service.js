@@ -11,6 +11,8 @@ const emailService = require('../../infra/email.service');
 
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key';
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
+
 
 class AuthService {
   /**
@@ -120,47 +122,36 @@ class AuthService {
 
 
   async login(email, password, loginType) {
-    // 1) 사용자 조회 (+ admin / instructor 포함)
     const user = await userRepository.findByEmail(email);
-    if (!user) {
-      throw new Error('가입되지 않은 이메일입니다.');
-    }
+    if (!user) throw new Error('가입되지 않은 이메일입니다.');
 
-    // 2) 비밀번호 검증
     const ok = await bcrypt.compare(password, user.password || '');
-    if (!ok) {
-      throw new Error('비밀번호가 일치하지 않습니다.');
+    if (!ok) throw new Error('비밀번호가 일치하지 않습니다.');
+
+    if (user.status !== 'APPROVED') {
+      throw new Error('승인되지 않은 사용자입니다.');
+    }
+    if (loginType === 'ADMIN' && user.role === 'USER') {
+      throw new Error('관리자 권한이 없습니다.');
     }
 
-    // 3) 로그인 탭별 권한 체크
+    const payload = { userId: user.id };
+
+    // 1. Access Token (짧게: 1시간)
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+    // 2. Refresh Token (길게: 7일)
+    const refreshToken = jwt.sign(payload, REFRESH_SECRET, { expiresIn: '7d' });
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7일 후
+
+    // 3. 리프레시 토큰 저장 (레포지토리 사용)
+    await authRepository.saveRefreshToken(user.id, refreshToken, expiresAt);
+
+    // 4. 유저 정보 구성 (변수 선언 추가)
+    const isInstructor = !!user.instructor;
     const isAdmin = !!user.admin;
     const adminLevel = user.admin?.level || null;
-    const isInstructor = !!user.instructor;
 
-    if (loginType === 'ADMIN') {
-      if (!isAdmin) {
-        throw new Error('관리자 계정이 아닙니다.');
-      }
-    } else if (loginType === 'GENERAL') {
-      // 여기에서 관리자/슈퍼관리자가 일반 탭 로그인 허용할지 정책 정하면 됨
-
-      if (user.status !== 'APPROVED') {
-        throw new Error('승인되지 않은 계정입니다.');
-      }
-    } else {
-      throw new Error('잘못된 로그인 타입입니다.');
-    }
-
-    // 4) JWT 발급 (최소 정보만 넣기)
-    const payload = {
-      userId: user.id,
-    };
-
-    const accessToken = jwt.sign(payload, JWT_SECRET, {
-      expiresIn: '1h',
-    });
-
-    // 5) 프론트에서 쓸 유저 정보
     const responseUser = {
       id: user.id,
       email: user.userEmail,
@@ -173,8 +164,46 @@ class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       user: responseUser,
     };
+  }
+
+  async refreshAccessToken(incomingRefreshToken) {
+    if (!incomingRefreshToken) throw new new Error('리프레시 토큰이 없습니다.');
+
+    // 1. 토큰 검증
+    let payload;
+    try {
+      // jwt.verify()가 실패하면 catch 블록으로 이동
+      payload = jwt.verify(incomingRefreshToken, REFRESH_SECRET);
+    } catch (e) {
+      // 만료 또는 유효하지 않은 토큰 처리
+      throw new Error('리프레시 토큰이 만료되었거나 유효하지 않습니다.');
+    }
+
+    // 2. DB 확인 (레포지토리 사용)
+    const dbToken = await authRepository.findRefreshToken(payload.userId, incomingRefreshToken);
+
+    if (!dbToken) {
+      // DB에 없는 토큰 -> 위변조되었거나 강제 로그아웃됨
+      throw new Error('유효하지 않은 리프레시 토큰입니다. (재로그인 필요)');
+    }
+
+    // 3. 새 Access Token 발급
+    const newAccessToken = jwt.sign({ userId: payload.userId }, JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
+    return { accessToken: newAccessToken };
+  }
+
+  // [신규] 로그아웃 (DB에서 리프레시 토큰 삭제)
+  async logout(userId) {
+    if (userId) {
+      await authRepository.deleteRefreshToken(userId);
+    }
+    return { message: '로그아웃 되었습니다.' };
   }
   /**
    * 5. 비밀번호 재설정

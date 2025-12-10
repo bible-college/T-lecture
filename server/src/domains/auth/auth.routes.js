@@ -12,6 +12,10 @@ router.post('/code/verify', authController.verifyCode);
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 
+router.post('/refresh', authController.refresh); // Access Token 갱신
+router.post('/logout', authController.logout);
+
+
 // 비밀번호 재설정
 router.post('/reset-password', authController.resetPassword);
 

@@ -43,16 +43,57 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password, loginType } = req.body;
-
-    if (!email || !password || !loginType) {
-      throw new Error('이메일, 비밀번호, 로그인 타입을 모두 입력해주세요.');
-    }
-
-    // loginType: "ADMIN" | "GENERAL"
+    
+    // 서비스에서 AccessToken과 RefreshToken을 모두 받음
     const result = await authService.login(email, password, loginType);
-    res.status(200).json(result);
+
+    // 🍪 Refresh Token을 쿠키에 설정 (HttpOnly 보안 적용)
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true, // JS 접근 불가
+      secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
+      sameSite: 'strict', 
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7일 (Refresh Token 만료 기간과 일치)
+    });
+
+    // Access Token과 사용자 정보를 JSON으로 클라이언트에 전송
+    res.status(200).json({
+      accessToken: result.accessToken,
+      user: result.user,
+    });
   } catch (error) {
     res.status(401).json({ error: error.message });
+  }
+};
+
+exports.refresh = async (req, res) => {
+  try {
+    // 쿠키에서 리프레시 토큰 추출
+    const refreshToken = req.cookies.refreshToken;
+    
+    // 서비스 로직 호출하여 새 Access Token 발급
+    const result = await authService.refreshAccessToken(refreshToken);
+    
+    res.status(200).json(result); // { accessToken: "..." } 반환
+  } catch (error) {
+    // 갱신 실패 시 (만료/유효하지 않음), 쿠키를 지우고 401 반환하여 프론트에서 재로그인 유도
+    res.clearCookie('refreshToken');
+    res.status(401).json({ error: error.message });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    // 1. 쿠키에서 리프레시 토큰 삭제
+    res.clearCookie('refreshToken');
+    
+    // 2. (선택적) DB에서 리프레시 토큰 삭제 (auth 미들웨어 통과 시 req.user.id 사용)
+    // 현재 로그아웃은 auth 미들웨어 전에 위치하므로 req.user는 없습니다.
+    // 하지만 쿠키 삭제만으로도 클라이언트는 더 이상 갱신을 요청할 수 없습니다.
+
+    res.status(200).json({ message: '로그아웃 성공' });
+  } catch (error) {
+    // 에러가 나더라도 쿠키는 지웠으므로, 성공 응답을 보냅니다.
+    res.status(200).json({ message: '로그아웃 성공' });
   }
 };
 

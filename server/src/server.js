@@ -5,6 +5,7 @@ const config = require('./config');
 const { requestLogger } = require('./common/middlewares'); 
 const v1Router = require('./api/v1');        
 const cors = require('cors'); 
+const cookieParser = require('cookie-parser');
 
 require('./jobs/distanceBatch.job');
 const app = express();
@@ -47,6 +48,7 @@ app.options('*', (req, res) => {
 
 app.use(express.json());
 app.use(requestLogger);
+app.use(cookieParser());
 
 // 모든 v1 API는 /api/v1 아래로
 app.use('/api/v1', v1Router);

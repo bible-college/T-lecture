@@ -37,6 +37,34 @@ class AuthRepository {
       where: { email },
     });
   }
+
+  // [신규] 리프레시 토큰 저장 (기존 토큰 삭제 후 저장)
+  async saveRefreshToken(userId, token, expiresAt) {
+    // 단일 기기 로그인 정책: 해당 유저의 모든 리프레시 토큰 삭제
+    await prisma.refreshToken.deleteMany({ where: { userId } });
+    
+    return await prisma.refreshToken.create({
+      data: {
+        userId,
+        token,
+        expiresAt,
+      },
+    });
+  }
+
+  // [신규] 리프레시 토큰 조회
+  async findRefreshToken(userId, token) {
+    return await prisma.refreshToken.findFirst({
+      where: { userId, token },
+    });
+  }
+
+  // [신규] 리프레시 토큰 삭제 (로그아웃)
+  async deleteRefreshToken(userId) {
+    return await prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
+  }
 }
 
 module.exports = new AuthRepository();
