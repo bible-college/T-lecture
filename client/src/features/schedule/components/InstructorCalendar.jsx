@@ -58,12 +58,10 @@ export const InstructorCalendar = () => {
         abbr { text-decoration: none !important; }
 
         /* ============================================================
-           ★ 문제 해결의 핵심 CSS ★
-           순서대로 적용되어야 평일/주말 색상 충돌이 없습니다.
+           ★ CSS 핵심 구역 ★
            ============================================================ */
 
-        /* [Step 1] 모든 날짜 타일의 기본 상태 (평일 기준) */
-        /* 선택되든(:focus), 활성화되든(.active) 무조건 흰색 배경/검은 글씨로 초기화 */
+        /* [Step 1] 기본 타일 설정 */
         .react-calendar__tile,
         .react-calendar__tile:enabled:hover,
         .react-calendar__tile:enabled:focus,
@@ -76,61 +74,54 @@ export const InstructorCalendar = () => {
           font-size: 1.05rem;
           font-weight: 500;
           
-          /* ★ 평일이 파랗게 변하는 것을 막는 방어막 ★ */
+          /* 평일 기본색 (흰색) */
           background: white !important; 
           color: #374151 !important;
           
           border-right: 1px solid #f3f4f6;
           border-bottom: 1px solid #f3f4f6;
-          border-radius: 0 !important; /* 배경 찌그러짐 방지 */
+          border-radius: 0 !important;
           
           position: relative;
           overflow: visible !important;
           z-index: 0;
         }
 
-        /* [Step 2] 주말 색상 덮어쓰기 (가장 강력하게 !important) */
-        /* 위에서 흰색으로 밀어버렸으니, 주말은 다시 색을 입혀야 함 */
-        
+        /* [Step 2] 주말 색상 강제 적용 */
         /* 일요일 */
         .react-calendar__month-view__days__day--weekend,
         .react-calendar__month-view__days__day--weekend:enabled:focus,
         .react-calendar__month-view__days__day--weekend:enabled:hover {
-          background-color: #fff1f2 !important; /* 연한 빨강 */
-          color: #ef4444 !important;            /* 진한 빨강 */
+          background-color: #fff1f2 !important;
+          color: #ef4444 !important;
         }
 
         /* 토요일 */
         .react-calendar__month-view__days__day--weekend:not(:nth-child(7n)),
         .react-calendar__month-view__days__day--weekend:not(:nth-child(7n)):enabled:focus,
         .react-calendar__month-view__days__day--weekend:not(:nth-child(7n)):enabled:hover {
-          background-color: #f0f9ff !important; /* 연한 파랑 */
-          color: #2563eb !important;            /* 진한 파랑 */
+          background-color: #f0f9ff !important;
+          color: #2563eb !important;
         }
 
-        /* [Step 3] 선택된 날짜 (Custom Logic) */
-        /* 배경색은 건드리지 않고(위의 흰색 or 주말색 유지), 테두리만 그림 */
-        
+        /* [Step 3] 선택된 날짜 (테두리 + 체크) */
         .react-calendar__tile.selected-date {
           font-weight: 700;
-          /* 여기서 background를 설정하지 않음 -> 평일은 흰색, 주말은 주말색이 그대로 보임 */
         }
 
-        /* ★ 파란 테두리 그리기 ★ */
+        /* 테두리 (Border) */
         .react-calendar__tile.selected-date::before {
           content: '';
           position: absolute;
           top: 6px; left: 6px; right: 6px; bottom: 6px;
-          
-          background-color: transparent !important; /* 채우기 없음 */
-          border: 2px solid #3b82f6;                /* 파란 테두리 */
-          border-radius: 12px;                      /* 테두리 둥글게 */
-          
+          background-color: transparent !important;
+          border: 2px solid #3b82f6;
+          border-radius: 12px;
           z-index: 1;
           pointer-events: none;
         }
 
-        /* 체크 표시 */
+        /* 체크 표시 (Checkmark) */
         .react-calendar__tile.selected-date::after {
           content: '✔';
           position: absolute;
@@ -140,27 +131,44 @@ export const InstructorCalendar = () => {
           z-index: 2;
         }
 
-        /* 4. 오늘 날짜 (Today) */
-        .react-calendar__tile--now:not(.selected-date)::after {
+        /* ============================================================
+           ★ [수정된 부분] 4. 오늘 날짜 (Today) 처리 ★
+           TODAY 라벨을 타일이 아닌 '숫자(abbr)'에 붙여서
+           체크표시(tile::after)와 겹치지 않게 만듦
+           ============================================================ */
+        
+        /* 1. abbr 태그를 flex로 만들어 라벨이 숫자 밑으로 떨어지게 함 */
+        .react-calendar__tile abbr {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          position: relative;
+          z-index: 2;
+          width: 100%;
+        }
+
+        /* 2. 오늘 날짜의 숫자(abbr) 뒤에 TODAY 라벨 추가 */
+        .react-calendar__tile--now abbr::after {
           content: 'TODAY';
+          
+          /* 라벨 스타일 */
           font-size: 0.65rem;
           font-weight: 700;
           background-color: #eff6ff;
           color: #2563eb;
           padding: 3px 6px;
           border-radius: 4px;
-          margin-top: 6px;
+          margin-top: 6px; /* 숫자와의 간격 */
+          
+          /* 텍스트 줄바꿈 방지 등 */
+          white-space: nowrap;
         }
 
-        /* 기타 스타일 */
+        /* 기타: 이웃 달 숨김 */
         .react-calendar__month-view__days__day--neighboringMonth {
           background-color: #fcfcfc !important;
           color: transparent !important;
           pointer-events: none !important;
-        }
-        .react-calendar__tile abbr {
-          position: relative;
-          z-index: 2;
         }
       `}</style>
 
@@ -195,7 +203,6 @@ export const InstructorCalendar = () => {
         <div className="shadow-sm rounded-xl overflow-hidden border border-gray-200">
           <Calendar 
             onClickDay={handleDateClick}
-            /* 번쩍임 방지를 위해 null 유지 */
             value={null}
             tileClassName={({ date }) => {
               const dateStr = format(date, 'yyyy-MM-dd');
