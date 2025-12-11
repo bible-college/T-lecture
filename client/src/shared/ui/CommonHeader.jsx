@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { logout } from '../../features/auth/api/authApi';
+import { logout } from '../../features/auth/authApi';
 
 /**
  * @param {string} title - 왼쪽 상단 제목

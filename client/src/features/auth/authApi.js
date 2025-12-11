@@ -50,19 +50,15 @@ export async function getInstructorMeta() {
 }
 
 export const logout = async () => {
-    const deviceId = getDeviceId(); // 현재 기기 ID
-    await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify({ deviceId }), // [추가] 기기 ID 전송
+    const deviceId = getDeviceId();
+    // apiClient가 base URL과 토큰 헤더를 자동으로 처리함
+    await apiClient("/api/v1/auth/logout", {
+        method: "POST",
+        body: JSON.stringify({ deviceId }),
+        skipInterceptor: true, // 로그아웃 시 토큰 만료 에러 무시 가능
     });
-    
-    // 로컬 스토리지 클리어 (토큰 삭제)
+    // 로컬 스토리지 클리어
     localStorage.removeItem('accessToken');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userRole');
-    // 주의: deviceId는 지우면 안 됨! (기기 고유값이므로 유지)
 };
