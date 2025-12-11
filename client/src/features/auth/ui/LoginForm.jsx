@@ -1,69 +1,28 @@
-// src/features/auth/ui/LoginForm.jsx
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InputField } from '../../../shared/ui/InputField';
 import { Button } from '../../../shared/ui/Button';
-import { login as loginApi } from '../authApi';
+import { useAuth } from '../model/useAuth';
+import { USER_ROLES } from '../../../shared/constants/roles';
+
 export const LoginForm = () => {
   const navigate = useNavigate();
-
-  // ADMIN = 관리자, GENERAL = 일반/강사
-  const [loginType, setLoginType] = useState('GENERAL');
+  const { login, isLoading, error } = useAuth();
+  
+  const [loginType, setLoginType] = useState(USER_ROLES.GENERAL);
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
-  const [error, setError] = useState('');       // 토스트 메시지
-  const [loading, setLoading] = useState(false); // 로그인 시 로딩 상태
-
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const data = await loginApi({
-        email: formData.email,
-        password: formData.password,
-        loginType, // "ADMIN" | "GENERAL"
-      });
-
-      // 토큰 / 유저 정보 저장 (필요 시 원하는 방식으로 변경 가능)
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
-
-      // 💡 [Fix] 권한 가드(useAuthGuard)를 위한 role 저장
-      const user = data.user;
-      let role = 'USER';
-      if (user.isAdmin) {
-          role = user.adminLevel === 'SUPER' ? 'SUPER_ADMIN' : 'ADMIN';
-      }
-      localStorage.setItem('userRole', role);
-
-      if (loginType === 'ADMIN') {
-        // ✅ 관리자 탭 로그인일 때:
-        // SUPER → 슈퍼 전용 페이지, GENERAL → 일반 관리자 페이지
-        const level = data.user?.adminLevel;
-        if (level === 'SUPER') {
-          navigate('/admin/super');   // 관리자 권한 부여/회수 등
-        } else {
-          navigate('/admin');         // 일반 관리자 대시보드
-        }
-      } else {
-        navigate('/userHome');
-      }
-    } catch (err) {
-      setError(err.message || '로그인에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setLoading(false);
-    }
+    login({ ...formData, loginType });
   };
 
   return (
@@ -86,7 +45,7 @@ export const LoginForm = () => {
         {/* 에러 토스트 메시지 */}
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded text-left">
-            {error}
+            {error.message || '로그인에 실패했습니다.'}
           </div>
         )}
 
@@ -94,10 +53,10 @@ export const LoginForm = () => {
         <div className="flex mb-6">
           <button
             type="button"
-            onClick={() => setLoginType('ADMIN')}
+            onClick={() => setLoginType(USER_ROLES.ADMIN)}
             className={`flex-1 py-2 mx-1 rounded-md border text-sm font-semibold transition-colors
               ${
-                loginType === 'ADMIN'
+                loginType === USER_ROLES.ADMIN
                   ? 'bg-green-600 text-white border-green-600'
                   : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
               }`}
@@ -106,10 +65,10 @@ export const LoginForm = () => {
           </button>
           <button
             type="button"
-            onClick={() => setLoginType('GENERAL')}
+            onClick={() => setLoginType(USER_ROLES.GENERAL)}
             className={`flex-1 py-2 mx-1 rounded-md border text-sm font-semibold transition-colors
               ${
-                loginType === 'GENERAL'
+                loginType === USER_ROLES.GENERAL
                   ? 'bg-green-600 text-white border-green-600'
                   : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
               }`}
@@ -146,12 +105,12 @@ export const LoginForm = () => {
             type="submit"
             fullWidth
             variant="primary"
-            disabled={loading}
+            disabled={isLoading}
             className="mt-4"
           >
-            {loading
+            {isLoading
               ? '로그인 중...'
-              : loginType === 'ADMIN'
+              : loginType === USER_ROLES.ADMIN
               ? '관리자 로그인'
               : '로그인'}
           </Button>
@@ -167,7 +126,7 @@ export const LoginForm = () => {
             비밀번호 찾기
           </button>
 
-          {loginType !== 'ADMIN' && (
+          {loginType !== USER_ROLES.ADMIN && (
             <button
               type="button"
               onClick={() => navigate('/register')}

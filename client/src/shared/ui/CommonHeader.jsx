@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../features/auth/model/useAuth';
+import { USER_ROLES, ADMIN_LEVELS } from '../../shared/constants/roles';
 
 /**
  * @param {string} title - 왼쪽 상단 제목
@@ -11,13 +13,11 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 export const CommonHeader = ({ title, userLabel, links = [] }) => {
     const navigate = useNavigate();
     const location = useLocation(); // 현재 주소를 알아내서 활성화된 메뉴 강조용
+    const { logout } = useAuth();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         if (window.confirm('정말 로그아웃 하시겠습니까?')) {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('userRole');
-            alert('로그아웃 되었습니다.');
-            navigate('/login');
+            logout(); // useAuth의 logout (에러처리, 리다이렉트 내부 포함)
         }
     };
 
@@ -50,7 +50,7 @@ export const CommonHeader = ({ title, userLabel, links = [] }) => {
             <div className="flex items-center space-x-4">
                 {(() => {
                     const role = localStorage.getItem('userRole');
-                    const isSuper = role === 'SUPER_ADMIN';
+                    const isSuper = role === 'SUPER_ADMIN'; // Note: This string matches useAuth logic
                     const isAdmin = role === 'ADMIN';
                     const isInAdminPage = location.pathname.startsWith('/admin');
 

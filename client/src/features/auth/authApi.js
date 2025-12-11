@@ -1,11 +1,13 @@
 // client/src/features/auth/authApi.js
 import { apiClient } from "../../shared/apiClient";
+import { getDeviceId } from '../../shared/utils/deviceId';
 
 // 1. 로그인 (토큰 갱신 로직 불필요 -> skipInterceptor: true)
 export async function login({ email, password, loginType }) {
+  const deviceId = getDeviceId();
   const res = await apiClient("/api/v1/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password, loginType }),
+    body: JSON.stringify({ email, password, loginType, deviceId }),
     skipInterceptor: true, 
   });
   return res.json();
@@ -46,3 +48,17 @@ export async function getInstructorMeta() {
   const res = await apiClient("/api/v1/metadata/instructor");
   return res.json();
 }
+
+export const logout = async () => {
+    const deviceId = getDeviceId();
+    // apiClient가 base URL과 토큰 헤더를 자동으로 처리함
+    await apiClient("/api/v1/auth/logout", {
+        method: "POST",
+        body: JSON.stringify({ deviceId }),
+        skipInterceptor: true, // 로그아웃 시 토큰 만료 에러 무시 가능
+    });
+    // 로컬 스토리지 클리어
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('userRole');
+};
