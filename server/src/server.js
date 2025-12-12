@@ -58,6 +58,11 @@ app.get('/', (req, res) => {
   res.send('Hello T-LECTURE!');
 });
 
+
+
+const errorHandler = require('./common/middlewares/errorHandler');
+app.use(errorHandler);
+
 // 서버 시작
 app.listen(config.port, () => {
   console.log(`Server listening at http://localhost:${config.port}`);

@@ -37,7 +37,9 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "readline-sync": "^1.4.10",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "chai": "^6.2.1",
