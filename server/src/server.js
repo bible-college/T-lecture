@@ -64,4 +64,4 @@ app.listen(config.port, () => {
 });
 
 // (테스트용으로 app export 해두면 나중에 좋음)
-// module.exports = app;
+module.exports = app;
