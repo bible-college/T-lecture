@@ -80,14 +80,37 @@ const prisma = require('../../libs/prisma');
 
 class InstructorRepository {
 
+  /** [필수] ID로 강사 조회 */
+  /** [필수] ID로 강사 조회 */
+  async findInstructorByUserId(userId) {
+    if (!userId) return null;
+    return await prisma.instructor.findFirst({
+      where: { userId: Number(userId) }
+    });
+  }
+
+  /** [필수] 테스트용 강사 생성 (없을 경우) */
+  async createTestInstructor(email, userId) {
+    // 이미 User가 존재하는지 확인
+    let user = await prisma.user.findFirst({ where: { id: Number(userId) } });
+
+    // 유저조차 없으면 문제이므로 에러 처리하거나, 여기서 유저 생성을 기대하진 않음
+    // (서비스 로직상 이미 로그인 된 유저 ID가 넘어오므로 유저는 존재함)
+
+    // 강사 레코드 생성
+    return await prisma.instructor.create({
+      data: { userId: Number(userId) }
+    });
+  }
+
   /** [내부용] 숫자 ID로만 동작하는 저장 함수 */
   async replaceAvailabilities(realInstructorId, startDate, endDate, newDates) {
     if (realInstructorId === undefined || realInstructorId === null) {
-       throw new Error(`[Repo Error] 강사 ID가 없습니다.`);
+      throw new Error(`[Repo Error] 강사 ID가 없습니다.`);
     }
     const idAsNumber = Number(realInstructorId);
     if (isNaN(idAsNumber)) {
-       throw new Error(`[Repo Error] 강사 ID는 숫자여야 합니다. 값: ${realInstructorId}`);
+      throw new Error(`[Repo Error] 강사 ID는 숫자여야 합니다. 값: ${realInstructorId}`);
     }
 
     return await prisma.$transaction(async (tx) => {
@@ -138,25 +161,25 @@ class InstructorRepository {
       console.log("⚠️ 계정 자동 생성 중...");
       try {
         if (!user) {
-           user = await prisma.user.create({
-             data: {
-               userEmail: TEST_EMAIL,
-               name: "김강사",
-               status: "APPROVED",
-               password: "temp_password",
-               userphoneNumber: "010-0000-0000"
-             }
-           });
+          user = await prisma.user.create({
+            data: {
+              userEmail: TEST_EMAIL,
+              name: "김강사",
+              status: "APPROVED",
+              password: "temp_password",
+              userphoneNumber: "010-0000-0000"
+            }
+          });
         }
 
         if (!instructor) {
-           await prisma.instructor.create({
-             data: { userId: user.id }
-           });
-           // 재조회
-           instructor = await prisma.instructor.findFirst({
-             where: { userId: user.id }
-           });
+          await prisma.instructor.create({
+            data: { userId: user.id }
+          });
+          // 재조회
+          instructor = await prisma.instructor.findFirst({
+            where: { userId: user.id }
+          });
         }
       } catch (e) {
         console.error("생성 실패:", e);
@@ -169,23 +192,23 @@ class InstructorRepository {
     const realId = instructor.id || instructor.userId;
 
     if (!realId) {
-        console.log("DEBUG: instructor 객체:", instructor);
-        throw new Error("강사 ID(PK)를 찾을 수 없습니다.");
+      console.log("DEBUG: instructor 객체:", instructor);
+      throw new Error("강사 ID(PK)를 찾을 수 없습니다.");
     }
 
     // 4. 저장 실행
     const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0); 
+    const endDate = new Date(year, month, 0);
     endDate.setHours(23, 59, 59, 999);
 
     console.log(`[Repo] 실제 강사번호(${realId})로 저장 시작`);
-    
+
     return this.replaceAvailabilities(realId, startDate, endDate, dates);
   }
 
   /** 강의 배정 충돌 확인 (Mock) */
   async findActiveAssignmentsDate(instructorId, year, month, dates) {
-    return []; 
+    return [];
   }
 
   // --- 기존 함수들 ---

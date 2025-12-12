@@ -10,6 +10,7 @@ const { auth, requireRole } = require('../../common/middlewares');
 // 1. 근무 가능일 조회
 // GET /api/v1/instructor/availability
 router.get('/availability', auth, requireRole('INSTRUCTOR'), instructorController.getAvailability);
+// router.get('/availability', instructorController.getAvailability);
 
 // 2. 근무 가능일 수정
 // PUT /api/v1/instructor/availability

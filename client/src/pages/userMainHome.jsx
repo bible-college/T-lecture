@@ -2,7 +2,7 @@
 import React from 'react';
 import { MainLayout } from '../shared/ui/MainLayout';
 import { UserDashboard } from '../features/user/ui/userMainhome';
-import { useAuthGuard } from '../features/auth/model/useAuthGuard'; 
+import { useAuthGuard } from '../features/auth/model/useAuthGuard';
 import { CommonHeader } from '../shared/ui/CommonHeader';
 
 const UserMainHome = () => {
@@ -21,13 +21,21 @@ const UserMainHome = () => {
         console.error('User parsing error', e);
     }
 
-    if (!shouldRender) return null; 
+    // 헤더 메뉴 설정
+    // 헤더 메뉴 설정
+    const userLinks = [
+        { label: '내 정보', path: '/user-main/profile' },
+        { label: '신청 현황', path: '/instructor/schedule' },
+    ];
+
+    if (!shouldRender) return null;
 
     return (
         <>
-            <CommonHeader 
-                title="T-Lecture" 
+            <CommonHeader
+                title="T-Lecture"
                 userLabel={userLabel}
+                links={userLinks}
             />
             <MainLayout>
                 <UserDashboard />

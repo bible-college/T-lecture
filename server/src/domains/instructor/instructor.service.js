@@ -43,34 +43,54 @@ exports.updateAvailabilities = async (instructorId, year, month, newDatesStr) =>
 //**********여기부터 테스트 코드**********************
 
 // server/src/domains/instructor/instructor.service.js
-
-// ★★★ [수정됨] 같은 폴더에 있으므로 './'를 사용합니다 ★★★
-const instructorRepository = require('./instructor.repository'); 
+const instructorRepository = require('./instructor.repository');
 
 /**
  * 가능 일정 조회
  */
-exports.getAvailabilities = async (instructorId, year, month) => {
+exports.getAvailabilities = async (userIdString, year, month) => {
+  // 1. 강사 정보 찾기 (userId -> instructorId 변환)
+  const instructor = await instructorRepository.findInstructorByUserId(userIdString);
+  if (!instructor) {
+    return []; // 강사가 없으면 일정 없음
+  }
+
+  // 2. 실제 Instructor ID 사용
+  const realId = instructor.id || instructor.userId;
+
+  // 3. 날짜 계산 (비즈니스 로직)
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0);
   endDate.setHours(23, 59, 59, 999);
 
-  const availabilities = await instructorRepository.findAvailabilities(instructorId, startDate, endDate);
-  
-  // "YYYY-MM-DD" 문자열 배열로 변환
+  const availabilities = await instructorRepository.findAvailabilities(realId, startDate, endDate);
   return availabilities.map(item => item.availableOn.toISOString().split('T')[0]);
 };
 
 /**
- * 가능 일정 수정
+ * 가능 일정 수정 (모든 판단은 여기서 수행)
  */
-exports.updateAvailabilities = async (instructorId, year, month, newDatesStr) => {
-  // 1. 유효성 검사 등은 리포지토리 로직에 위임하거나 필요시 추가
-  // (현재 리포지토리의 findActiveAssignmentsDate는 통과용 Mock 상태)
+exports.updateAvailabilities = async (userIdString, year, month, dates) => {
+  const TEST_EMAIL = "test_instructor@test.com";
 
-  // 2. 리포지토리의 '똑똑한 함수(updateAvailabilities)' 호출
-  // (여기서 문자열 ID -> 숫자 ID 변환 및 DB 저장이 수행됨)
-  await instructorRepository.updateAvailabilities(instructorId, year, month, newDatesStr);
-  
+  // 1. 강사 존재 여부 확인 및 자동 생성 판단
+  let instructor = await instructorRepository.findInstructorByUserId(userIdString);
+
+  if (!instructor) {
+    console.log("⚠️ 강사 정보 없음. 서비스 단에서 생성 결정.");
+    instructor = await instructorRepository.createTestInstructor(TEST_EMAIL, userIdString);
+  }
+
+  // 2. 저장용 ID 추출 (id가 없으면 userId 사용)
+  const realId = instructor.id || instructor.userId;
+
+  // 3. 날짜 범위 계산
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0);
+  endDate.setHours(23, 59, 59, 999);
+
+  // 4. 리포지토리에 순수하게 "데이터 저장"만 명령
+  await instructorRepository.replaceAvailabilities(realId, startDate, endDate, dates);
+
   return { message: '근무 가능일이 저장되었습니다.' };
 };

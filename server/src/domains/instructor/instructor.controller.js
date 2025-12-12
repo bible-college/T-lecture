@@ -40,13 +40,17 @@ exports.getAvailability = async (req, res) => {
   try {
     const { year, month } = req.query;
     // req.user가 없으면 쿼리나 바디에서 userId를 찾도록 임시 수정
-    const userId = req.user ? req.user.id : req.query.userId; 
-    
+    const userId = req.user ? req.user.id : req.query.userId;
+
+    console.log(`[DEBUG] 일정 조회 요청: userId=${userId}, year=${year}, month=${month}`); // ★ 로그 추가
+
     if (!year || !month) throw new Error('연도(year)와 월(month) 파라미터가 필요합니다.');
 
     const result = await instructorService.getAvailabilities(userId, Number(year), Number(month));
+    console.log(`[DEBUG] 조회 결과: ${result.length}건 발견`); // ★ 로그 추가
     res.json(result);
   } catch (error) {
+    console.error(`[DEBUG] 조회 에러:`, error); // ★ 로그 추가
     res.status(400).json({ error: error.message });
   }
 };
@@ -64,9 +68,9 @@ exports.updateAvailability = async (req, res) => {
 
     // 2. 로그인 유저 ID 처리 (미들웨어 뺐을 땐 body의 userId 사용)
     const currentUserId = req.user ? req.user.id : userId;
-    
+
     if (!currentUserId) {
-        throw new Error('유저 ID가 확인되지 않습니다.');
+      throw new Error('유저 ID가 확인되지 않습니다.');
     }
 
     console.log(`[서버] 일정 저장 요청: ID=${currentUserId}, ${year}년 ${month}월, 날짜=${dates}`);
