@@ -170,7 +170,7 @@ class AuthService {
   }
 
   async refreshAccessToken(incomingRefreshToken) {
-    if (!incomingRefreshToken) throw new new Error('리프레시 토큰이 없습니다.');
+    if (!incomingRefreshToken) throw new Error('리프레시 토큰이 없습니다.');
 
     // 1. 토큰 검증
     let payload;

@@ -66,6 +66,34 @@ class InstructorRepository {
       skipDuplicates: true,
     });
   }
+  async findAvailableInPeriod(startDate, endDate) {
+        return await prisma.instructor.findMany({
+            where: {
+                availabilities: {
+                    some: {
+                        availableOn: { gte: new Date(startDate), lte: new Date(endDate) }
+                    }
+                },
+                user: { status: 'APPROVED' }
+            },
+            include: {
+                user: {
+                    select: { name: true, userphoneNumber: true, userEmail: true }
+                },
+                availabilities: {
+                    where: {
+                        availableOn: { gte: new Date(startDate), lte: new Date(endDate) }
+                    },
+                    orderBy: { availableOn: 'asc' }
+                },
+                team: true,
+                virtues: { include: { virtue: true } } // 덕목 정보 등
+            }
+        });
+    }
 }
 
+
+
+  
 module.exports = new InstructorRepository();

@@ -1,21 +1,20 @@
-// client/src/pages/auth/SignupPage.jsx (Refactored)
+// src/pages/auth/SignupPage.jsx
 import React from 'react';
 import { RegisterForm } from '../../features/auth/ui/RegisterForm';
-import { MainLayout } from '../../shared/ui/MainLayout';
-import { useAuthGuard } from '../../features/auth/model/useAuthGuard'; // 💡 Guard Hook 추가
+import { ContentWrapper } from '../../shared/ui/ContentWrapper'; // ✅ 수정됨
+import { useAuthGuard } from '../../features/auth/model/useAuthGuard';
 
 const SignupPage = () => {
-    // GUEST 설정: 로그인 상태면 메인으로 튕겨냄
     const { shouldRender } = useAuthGuard('GUEST');
 
-    if (!shouldRender) return null; // 로그인 상태면 숨김
+    if (!shouldRender) return null;
 
     return (
-        <MainLayout>
+        <ContentWrapper> {/* ✅ 수정됨 */}
             <div className="signup-page-container" style={{ padding: '50px 0' }}>
                 <RegisterForm />
             </div>
-        </MainLayout>
+        </ContentWrapper>
     );
 };
 

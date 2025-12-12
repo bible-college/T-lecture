@@ -9,6 +9,57 @@ class AssignmentRepository {
      * [신규] 특정 기간 내 활성화된(Active) 배정 날짜 목록 조회
      * - 가능일 수정 시, 이미 배정된 날짜를 삭제하지 못하게 하기 위함
      */
+    async findUnitsWithSchedules(startDate, endDate) {
+        return await prisma.unit.findMany({
+            where: {
+                schedules: {
+                    some: {
+                        date: {
+                            gte: new Date(startDate),
+                            lte: new Date(endDate),
+                        },
+                    },
+                },
+            },
+            include: {
+                // 부대 일정 (날짜 확인용)
+                schedules: {
+                    where: {
+                        date: {
+                            gte: new Date(startDate),
+                            lte: new Date(endDate),
+                        },
+                    },
+                    orderBy: { date: 'asc' },
+                    include: {
+                        // 현재 배정된 인원 현황만 파악 (필요하다면)
+                        assignments: {
+                            where: { state: 'Active' }
+                        }
+                    }
+                },
+                // 위치 정보가 unit에 없으면 trainingLocations[0]을 쓸 수도 있으므로 일단 가져옴
+                // (계산용이 아니라 정보 표시용)
+                trainingLocations: true, 
+            },
+            orderBy: {
+                educationStart: 'asc',
+            }
+        });
+    }
+
+    async updateAssignmentStatusCondition(instructorId, unitScheduleId, updateData) {
+        return await prisma.instructorUnitAssignment.updateMany({
+            where: {
+                userId: Number(instructorId),
+                unitScheduleId: Number(unitScheduleId),
+                // Race Condition 방지 조건: 이미 확정(Confirmed)이거나 취소(Canceled)된 건은 제외
+                classification: { not: 'Confirmed' },
+                state: { not: 'Canceled' }
+            },
+            data: updateData
+        });
+    }
     async findActiveAssignmentsDate(instructorId, startDate, endDate) {
         const assignments = await prisma.instructorUnitAssignment.findMany({
         where: {
@@ -32,72 +83,6 @@ class AssignmentRepository {
         return assignments.map((a) => a.UnitSchedule.date);
     }
 
-    /**
-     * [신규] 강사의 배정 목록 조회 (필터링 지원)
-     * - 근무 이력 (past + confirmed)
-     * - 배정 목록 (future + active)
-     */
-    async findAssignments(instructorId, whereCondition) {
-        return await prisma.instructorUnitAssignment.findMany({
-        where: {
-            userId: Number(instructorId),
-            ...whereCondition,
-        },
-        include: {
-            UnitSchedule: {
-            include: {
-                unit: true, // 부대 정보
-            },
-            },
-        },
-        orderBy: {
-            UnitSchedule: {
-            date: 'asc',
-            },
-        },
-        });
-    }
-
-    /**
-     * [신규] 특정 배정 건 조회 (단건)
-     * - 상세 조회 및 응답 처리용
-     */
-    async findAssignmentByScheduleId(instructorId, unitScheduleId) {
-        return await prisma.instructorUnitAssignment.findUnique({
-        where: {
-            assignment_instructor_schedule_unique: {
-            userId: Number(instructorId),
-            unitScheduleId: Number(unitScheduleId),
-            },
-        },
-        include: {
-            UnitSchedule: {
-            include: {
-                unit: {
-                include: {
-                    trainingLocations: true, // 교육장소 정보 (상세용)
-                },
-                },
-            },
-            },
-        },
-        });
-    }
-
-    /**
-     * [신규] 배정 상태 업데이트 (수락/거절 등)
-     */
-    async updateAssignment(instructorId, unitScheduleId, data) {
-        return await prisma.instructorUnitAssignment.update({
-        where: {
-            assignment_instructor_schedule_unique: {
-            userId: Number(instructorId),
-            unitScheduleId: Number(unitScheduleId),
-            },
-        },
-        data,
-        });
-    }
 }
 
 module.exports = new AssignmentRepository();

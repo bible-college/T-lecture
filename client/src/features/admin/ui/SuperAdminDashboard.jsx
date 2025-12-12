@@ -2,16 +2,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// 1. 분리한 로직(Model) 가져오기
+// Model
 import { useSuperAdmin } from '../model/useSuperAdmin';
 
-// 2. 컴포넌트들
+// UI Components
 import { UserListSection } from '../../../entities/user/ui/UserListSection';
 import { Button } from '../../../shared/ui/Button';
+import { InputField } from '../../../shared/ui/InputField'; // [NEW] 추가
 
 export const SuperAdminDashboard = () => {
     const navigate = useNavigate();
-    // 로직은 훅에서 다 처리하고, 결과만 받아서 씁니다.
     const {
         loading,
         error,
@@ -37,14 +37,16 @@ export const SuperAdminDashboard = () => {
                     </p>
                 </div>
 
-                {/* 검색 바 */}
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="이름/이메일 검색"
-                    className="border border-gray-300 rounded px-3 py-2 text-sm w-full md:w-64 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                {/* [UPDATE] InputField 사용 */}
+                <div className="w-full md:w-64">
+                    <InputField
+                        placeholder="이름/이메일 검색"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        // InputField 내부의 mb-4를 없애고 싶다면 부모 div에서 제어하거나, 
+                        // InputField가 className prop을 지원해야 함 (현재 지원 안함 -> 감싸는 div로 해결)
+                    />
+                </div>
             </div>
 
             {error && (
@@ -53,6 +55,7 @@ export const SuperAdminDashboard = () => {
                 </div>
             )}
 
+            {/* ... 나머지 리스트 섹션들은 기존 코드 유지 (Button 컴포넌트 이미 사용중) ... */}
             {loading ? (
                 <div className="text-center py-10 text-gray-500">데이터를 불러오는 중입니다...</div>
             ) : (
@@ -65,7 +68,6 @@ export const SuperAdminDashboard = () => {
                         renderActions={(u) => (
                             <Button
                                 size="xsmall"
-                                className="bg-green-600 hover:bg-green-700 text-white border-none"
                                 onClick={() => grantAdmin(u.id, 'GENERAL')}
                             >
                                 관리자 부여
@@ -81,7 +83,6 @@ export const SuperAdminDashboard = () => {
                         renderActions={(u) => (
                             <Button
                                 size="xsmall"
-                                className="bg-green-600 hover:bg-green-700 text-white border-none"
                                 onClick={() => grantAdmin(u.id, 'GENERAL')}
                             >
                                 관리자 부여
@@ -98,14 +99,13 @@ export const SuperAdminDashboard = () => {
                             <div className="flex gap-1 flex-col sm:flex-row">
                                 <Button
                                     size="xsmall"
-                                    className="bg-green-600 hover:bg-green-700 text-white border-none"
                                     onClick={() => approveUser(u.id)}
                                 >
                                     승인
                                 </Button>
                                 <Button
                                     size="xsmall"
-                                    className="bg-red-500 hover:bg-red-600 text-white border-none"
+                                    variant="danger" // [UPDATE] variant 활용
                                     onClick={() => rejectUser(u.id)}
                                 >
                                     거절
@@ -125,7 +125,7 @@ export const SuperAdminDashboard = () => {
                                 return (
                                     <Button
                                         size="xsmall"
-                                        className="bg-red-500 hover:bg-red-600 text-white border-none"
+                                        variant="danger" // [UPDATE] variant 활용
                                         onClick={() => revokeAdmin(u.id)}
                                     >
                                         권한 회수

@@ -1,4 +1,3 @@
-//client/src/App.jsx
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -13,7 +12,7 @@ import AdminPage from '../pages/admin/AdminPage';
 import UserMainHome from '../pages/user/UserMainPage';
 import SuperAdminPage from '../pages/admin/SuperAdminPage';
 import AssignmentPage from '../pages/admin/AssignmentPage';
-import { SuperAdminLayout } from '../shared/ui/layouts/SuperAdminLayout';
+
 
 function App() {
     return (
@@ -22,17 +21,17 @@ function App() {
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
+                    
+                    {/* 일반 유저 및 강사 */}
                     <Route path="/instructor/schedule" element={<InstructorSchedulePage />} />
-                    <Route path="/admin" element={<AdminPage />} />
                     <Route path="/user-main/*" element={<UserMainHome />} />
 
-                    {/* Super Admin Routes wrapped in Layout */}
-                    <Route path="/admin/super" element={<SuperAdminLayout />}>
-                        <Route index element={<SuperAdminPage />} />
-                    </Route>
-                    <Route path="/admin/assignments" element={<SuperAdminLayout />}>
-                        <Route index element={<AssignmentPage />} />
-                    </Route>
+                    {/* 일반 관리자 */}
+                    <Route path="/admin" element={<AdminPage />} />
+                    <Route path="/admin/assignments" element={<AssignmentPage />} />
+
+                    {/* 슈퍼 관리자 (Nested Layout 제거 -> Flat Route) */}
+                    <Route path="/admin/super" element={<SuperAdminPage />} />
 
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/login" replace />} />
