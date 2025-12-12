@@ -1,122 +1,93 @@
 // src/entities/user/ui/InstructorFields.jsx
-
 import React from "react";
+import { InputField } from "../../../shared/ui/InputField"; // [NEW]
+import { SelectField } from "../../../shared/ui/SelectField"; // [NEW] 위에서 만든 파일
 
-/**
- * 강사 전용 입력 필드: 주소 / 팀 / 직책 / 덕목 / 자차 여부
- */
 export const InstructorFields = ({
     form,
     options,
     loadingOptions,
     onChange,
     onToggleVirtue,
-    }) => {
+}) => {
     return (
         <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
-        <h3 className="font-bold mb-4 text-sm text-gray-700">
-            강사 활동 정보
-        </h3>
+            <h3 className="font-bold mb-4 text-sm text-gray-700">
+                강사 활동 정보
+            </h3>
 
-        {loadingOptions ? (
-            <p className="text-sm text-gray-500">
-            강의 관련 옵션 불러오는 중...
-            </p>
-        ) : (
-            <div className="space-y-4">
-            {/* 거주지 주소 */}
-            <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                거주지 주소 *
-                </label>
-                <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded text-sm bg-white"
-                placeholder="시/군/구까지 포함하여 입력하세요"
-                value={form.address}
-                onChange={onChange("address")}
-                required
-                />
-            </div>
+            {loadingOptions ? (
+                <p className="text-sm text-gray-500">강의 관련 옵션 불러오는 중...</p>
+            ) : (
+                <div className="space-y-4">
+                    {/* [UPDATE] 거주지 주소 -> InputField */}
+                    <InputField
+                        label="거주지 주소"
+                        required
+                        placeholder="시/군/구까지 포함하여 입력하세요"
+                        value={form.address}
+                        onChange={onChange("address")}
+                    />
 
-            {/* 팀: select */}
-            <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                소속 팀 *
-                </label>
-                <select
-                className="w-full p-2 border border-gray-300 rounded text-sm bg-white"
-                value={form.teamId}
-                onChange={onChange("teamId")}
-                >
-                <option value="">선택하세요</option>
-                {options.teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                    {team.name}
-                    </option>
-                ))}
-                </select>
-            </div>
+                    {/* [UPDATE] 팀 -> SelectField (새로 만든 컴포넌트 사용 시) */}
+                    <SelectField
+                        label="소속 팀"
+                        required
+                        value={form.teamId}
+                        onChange={onChange("teamId")}
+                        options={options.teams} // {id, name}
+                    />
 
-            {/* 직책(UserCategory): select */}
-            <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                직책 *
-                </label>
-                <select
-                className="w-full p-2 border border-gray-300 rounded text-sm bg-white"
-                value={form.category}
-                onChange={onChange("category")}
-                >
-                <option value="">선택하세요</option>
-                {options.categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                    {c.label}
-                    </option>
-                ))}
-                </select>
-            </div>
+                    {/* [UPDATE] 직책 -> SelectField */}
+                    <SelectField
+                        label="직책"
+                        required
+                        value={form.category}
+                        onChange={onChange("category")}
+                        options={options.categories} // {id, label}
+                    />
 
-            {/* 과목(덕목): 체크박스 목록 */}
-            <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                강의 가능 과목(덕목) *
-                </label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-200 rounded p-2 bg-white">
-                {options.virtues.map((v) => {
-                    const checked = form.virtueIds.includes(v.id);
-                    return (
-                    <label
-                        key={v.id}
-                        className="flex items-center gap-1 text-xs text-gray-700"
-                    >
+                    {/* 과목(덕목) 체크박스는 InputField로 대체 불가하므로 기존 스타일 유지 (단, 스타일 조금 다듬음) */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            강의 가능 과목(덕목) <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-white">
+                            {options.virtues.map((v) => {
+                                const checked = form.virtueIds.includes(v.id);
+                                return (
+                                    <label
+                                        key={v.id}
+                                        className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                                            checked={checked}
+                                            onChange={() => onToggleVirtue(v.id)}
+                                        />
+                                        <span>{v.name}</span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* 자차 여부 */}
+                    <div className="flex items-center gap-2 mt-2">
                         <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => onToggleVirtue(v.id)}
+                            type="checkbox"
+                            id="car"
+                            className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                            checked={form.hasCar}
+                            onChange={onChange("hasCar")}
                         />
-                        <span>{v.name}</span>
-                    </label>
-                    );
-                })}
+                        <label htmlFor="car" className="text-sm text-gray-700 cursor-pointer">
+                            자차 보유 및 운행 가능
+                        </label>
+                    </div>
                 </div>
-            </div>
-
-            {/* 자차 여부 */}
-            <div className="flex items-center gap-2">
-                <input
-                type="checkbox"
-                id="car"
-                className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                checked={form.hasCar}
-                onChange={onChange("hasCar")}
-                />
-                <label htmlFor="car" className="text-sm text-gray-700">
-                자차 보유 및 운행 가능
-                </label>
-            </div>
-            </div>
-        )}
+            )}
         </div>
     );
 };

@@ -1,62 +1,47 @@
 // server/src/domains/distance/controllers/distance.controller.js
 const distanceService = require('./distance.service');
-const kakaoUsageRepository = require('./kakaoUsage.repository');
+const asyncHandler = require('../../common/middlewares/asyncHandler');
+const AppError = require('../../common/errors/AppError');
 
-exports.getDistance = async (req, res, next) => {
-    try {
-        const instructorId = Number(req.params.instructorId);
-        const unitId = Number(req.params.unitId);
+exports.getDistance = asyncHandler(async (req, res) => {
+    const instructorId = Number(req.params.instructorId);
+    const unitId = Number(req.params.unitId);
+
+    if (!Number.isFinite(instructorId) || !Number.isFinite(unitId)) {
+        throw new AppError('instructorId/unitId가 올바르지 않습니다.', 400, 'VALIDATION_ERROR');
+    }
+
         const record = await distanceService.getDistance(instructorId, unitId);
         res.json(record);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+});
+
+exports.getUnitsWithinDistance = asyncHandler(async (req, res) => {
+    const instructorId = Number(req.params.instructorId);
+    const min = Number(req.query.min ?? 0);
+    const max = Number(req.query.max ?? 999999);
+
+    if (!Number.isFinite(instructorId) || !Number.isFinite(min) || !Number.isFinite(max)) {
+        throw new AppError('파라미터가 올바르지 않습니다.', 400, 'VALIDATION_ERROR');
     }
-};
-
-exports.getUnitsWithinDistance = async (req, res, next) => {
-    try {
-        const instructorId = Number(req.params.instructorId);
-        const min = Number(req.query.min ?? 0);
-        const max = Number(req.query.max ?? 999999);
-
-        const units = await distanceService.getUnitsWithinDistance(
-        instructorId,
-        min,
-        max,
-        );
-        res.json(units);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    if (min < 0 || max < 0 || min > max) {
+        throw new AppError('거리 범위(min/max)가 올바르지 않습니다.', 400, 'VALIDATION_ERROR');
     }
-};
 
-exports.getTodayUsage = async (req, res, next) => {
-    try {
-        const usage = await kakaoUsageRepository.getOrCreateToday();
+    const units = await distanceService.getUnitsWithinDistance(instructorId, min, max);
+    res.json(units);
+});
 
-        const remainingRoute = MAX_ROUTE_PER_DAY - usage.routeCount;
-        const remainingGeocode = MAX_GEOCODE_PER_DAY - usage.geocodeCount;
+exports.getTodayUsage = asyncHandler(async (req, res) => {
+    const usage = await distanceService.getTodayUsage();
+    res.json(usage);
+});
 
-        res.json({
-        date: usage.date,
-        routeCount: usage.routeCount,
-        geocodeCount: usage.geocodeCount,
-        remainingRoute,
-        remainingGeocode,
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+exports.runDailyBatchOnce = asyncHandler(async (req, res) => {
+    const limit = Number(req.body?.limit ?? 200);
+    if (!Number.isFinite(limit) || limit <= 0) {
+        throw new AppError('limit은 1 이상의 숫자여야 합니다.', 400, 'VALIDATION_ERROR');
     }
-};
 
-exports.runDailyBatchOnce = async (req, res, next) => {
-    try {
-        const limit = Number(req.body.limit ?? 200);
-        const result = await distanceService.calculateDistancesBySchedulePriority(
-        limit,
-        );
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
+    const result = await distanceService.calculateDistancesBySchedulePriority(limit);
+    res.json(result);
+});

@@ -31,4 +31,11 @@ router.get(
     requireRole('INSTRUCTOR'),
     assignmentController.getWorkHistory
 );
+
+router.get(
+    '/candidates',
+    auth,
+    requireRole('ADMIN'), 
+    assignmentController.getCandidates
+);
 module.exports = router;

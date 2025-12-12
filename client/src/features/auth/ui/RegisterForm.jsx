@@ -1,7 +1,5 @@
-// client/src/features/auth/ui/RegisterForm.jsx
-
 import React, { useState } from "react";
-import { Button } from "../../../shared/ui/Button";
+import { Button } from "../../../shared/ui/Button"; // ✅ 공용 버튼 사용
 import {
   sendVerificationCode,
   verifyEmailCode,
@@ -9,7 +7,7 @@ import {
 } from "../authApi";
 import { useNavigate } from "react-router-dom";
 
-// 새로 만든 공통 컴포넌트들
+// 공통 컴포넌트들
 import { UserBasicFields } from "../../../entities/user/ui/UserBasicFields";
 import { InstructorFields } from "../../../entities/user/ui/InstructorFields";
 import { useInstructorMeta } from "../../../entities/user/model/useInstructorMeta";
@@ -24,19 +22,18 @@ export const RegisterForm = () => {
     password: "",
     phoneNumber: "",
     code: "",
-    address: "", // 강사일 때만 사용
-    hasCar: false, // 일단 상태만, 서버에는 아직 안 보냄
+    address: "",
+    hasCar: false,
     agreed: false,
-    // 강사용 메타데이터
-    virtueIds: [], // 선택한 덕목(Virtue) id 목록
-    teamId: "", // Team id (select)
-    category: "", // UserCategory(enum) 문자열: 'Main' | 'Co' | 'Assistant' | 'Practicum'
+    virtueIds: [],
+    teamId: "",
+    category: "",
   });
 
   const {
-    options,                 // { virtues, teams, categories }
-    loading: loadingOptions, // boolean
-    error: metaError,        // 메타데이터 로딩 에러 메시지
+    options,
+    loading: loadingOptions,
+    error: metaError,
   } = useInstructorMeta();
 
   const [sendingCode, setSendingCode] = useState(false);
@@ -54,7 +51,6 @@ export const RegisterForm = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // 덕목(Virtue) 체크박스 토글
   const toggleVirtue = (virtueId) => {
     setForm((prev) => {
       const exists = prev.virtueIds.includes(virtueId);
@@ -143,20 +139,15 @@ export const RegisterForm = () => {
         name: form.name,
         phoneNumber: form.phoneNumber,
         address: userType === "INSTRUCTOR" ? form.address : undefined,
-        type: userType, // 'INSTRUCTOR' | 'USER'
-
-        // 강사일 때만 전송
-        virtueIds:
-          userType === "INSTRUCTOR" ? form.virtueIds : undefined,
-        teamId:
-          userType === "INSTRUCTOR" ? Number(form.teamId) : undefined,
+        type: userType,
+        virtueIds: userType === "INSTRUCTOR" ? form.virtueIds : undefined,
+        teamId: userType === "INSTRUCTOR" ? Number(form.teamId) : undefined,
         category: userType === "INSTRUCTOR" ? form.category : undefined,
       };
 
       const result = await registerUser(payload);
 
       setInfo(result.message || "가입 신청이 완료되었습니다.");
-      // 가입 신청 후 바로 로그인 화면으로 이동
       setTimeout(() => {
         navigate("/login");
       }, 1200);
@@ -168,7 +159,7 @@ export const RegisterForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-full flex items-center justify-center bg-gray-100 p-4">
       <div className="max-w-lg w-full bg-white rounded-xl shadow-lg p-8">
         <h2 className="text-2xl font-bold text-center mb-2 text-gray-800">
           회원가입
@@ -178,45 +169,40 @@ export const RegisterForm = () => {
         </p>
 
         {/* 안내/에러 메시지 */}
-        {displayError  && (
+        {displayError && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2 rounded">
             {error}
           </div>
         )}
-        {info && !displayError  && (
+        {info && !displayError && (
           <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-3 py-2 rounded">
             {info}
           </div>
         )}
 
-        {/* 탭 버튼 (강사 / 일반) */}
-        <div className="flex mb-8 border-b border-gray-200">
-          <button
+        {/* ✅ [수정됨] 탭 버튼 교체: 하드코딩된 button -> 공용 Button 컴포넌트 */}
+        <div className="flex gap-2 mb-8">
+          <Button
             type="button"
-            className={`flex-1 py-3 text-center font-medium transition-colors ${
-              userType === "INSTRUCTOR"
-                ? "border-b-2 border-green-500 text-green-600 font-bold"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
+            fullWidth
+            // 선택된 탭은 primary(초록색), 선택 안 된 탭은 secondary(회색)
+            variant={userType === "INSTRUCTOR" ? "primary" : "secondary"}
             onClick={() => setUserType("INSTRUCTOR")}
           >
             강사
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className={`flex-1 py-3 text-center font-medium transition-colors ${
-              userType === "USER"
-                ? "border-b-2 border-green-500 text-green-600 font-bold"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
+            fullWidth
+            variant={userType === "USER" ? "primary" : "secondary"}
             onClick={() => setUserType("USER")}
           >
             일반
-          </button>
+          </Button>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* 공통 기본 정보 입력 */}
+          {/* 공통 기본 정보 입력 (이미 컴포넌트화됨) */}
           <UserBasicFields
             form={form}
             onChange={handleChange}
@@ -227,7 +213,7 @@ export const RegisterForm = () => {
             onVerifyCode={handleVerifyCode}
           />
 
-          {/* 강사 전용 정보 */}
+          {/* 강사 전용 정보 (이미 컴포넌트화됨) */}
           {userType === "INSTRUCTOR" && (
             <InstructorFields
               form={form}
