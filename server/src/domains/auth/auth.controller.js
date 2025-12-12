@@ -42,17 +42,53 @@ exports.register = async (req, res) => {
 // [로그인]
 exports.login = async (req, res) => {
   try {
-    const { email, password, loginType } = req.body;
+    const { email, password, loginType, deviceId  } = req.body;
+    
+    // 서비스에서 AccessToken과 RefreshToken을 모두 받음
+    const result = await authService.login(email, password, loginType, deviceId );
 
-    if (!email || !password || !loginType) {
-      throw new Error('이메일, 비밀번호, 로그인 타입을 모두 입력해주세요.');
-    }
+    // 🍪 Refresh Token을 쿠키에 설정 (HttpOnly 보안 적용)
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true, // JS 접근 불가
+      secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
+      sameSite: 'strict', 
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7일 (Refresh Token 만료 기간과 일치)
+    });
 
-    // loginType: "ADMIN" | "GENERAL"
-    const result = await authService.login(email, password, loginType);
-    res.status(200).json(result);
+    // Access Token과 사용자 정보를 JSON으로 클라이언트에 전송
+    res.status(200).json({
+      accessToken: result.accessToken,
+      user: result.user,
+    });
   } catch (error) {
     res.status(401).json({ error: error.message });
+  }
+};
+
+exports.refresh = async (req, res) => {
+  try {
+    // 쿠키에서 리프레시 토큰 추출
+    const refreshToken = req.cookies.refreshToken;
+    
+    // 서비스 로직 호출하여 새 Access Token 발급
+    const result = await authService.refreshAccessToken(refreshToken);
+    
+    res.status(200).json(result); // { accessToken: "..." } 반환
+  } catch (error) {
+    // 갱신 실패 시 (만료/유효하지 않음), 쿠키를 지우고 401 반환하여 프론트에서 재로그인 유도
+    res.clearCookie('refreshToken');
+    res.status(401).json({ error: error.message });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    const { deviceId } = req.body;
+    await authService.logout(req.user.id, deviceId); // deviceId 전달
+    res.json({ message: "로그아웃 되었습니다." });
+  } catch (error) {
+    // 에러가 나더라도 쿠키는 지웠으므로, 성공 응답을 보냅니다.
+    res.status(200).json({ message: '로그아웃 성공' });
   }
 };
 

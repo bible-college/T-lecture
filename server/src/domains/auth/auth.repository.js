@@ -37,6 +37,50 @@ class AuthRepository {
       where: { email },
     });
   }
+
+  // [신규] 리프레시 토큰 저장 (기존 토큰 삭제 후 저장)
+  async saveRefreshToken(userId, token, expiresAt, deviceId) {
+    if (deviceId) {
+      // 1. 기기 ID가 있으면 -> 해당 기기의 기존 토큰만 삭제 (교체)
+      await prisma.refreshToken.deleteMany({
+          where: { 
+              userId,
+              deviceId 
+          }
+      });
+    } else {
+        await prisma.refreshToken.deleteMany({ where: { userId } });
+    }
+    
+    return await prisma.refreshToken.create({
+      data: {
+        userId,
+        token,
+        expiresAt,
+        deviceId 
+      },
+    });
+  }
+
+  // [신규] 리프레시 토큰 조회
+  async findRefreshToken(userId, token) {
+    return await prisma.refreshToken.findFirst({
+      where: { userId, token },
+    });
+  }
+
+  // [신규] 리프레시 토큰 삭제 (로그아웃)
+  async deleteRefreshToken(userId, deviceId) {
+    const whereCondition = { userId };
+    // 기기 ID가 넘어왔으면 조건에 추가 -> 내 기기만 삭제됨
+    if (deviceId) {
+        whereCondition.deviceId = deviceId;
+    }
+    // deviceId가 없으면? -> whereCondition이 { userId }만 남으므로 '전체 로그아웃'이 됨 (의도된 동작으로 사용 가능)
+    return await prisma.refreshToken.deleteMany({
+        where: whereCondition
+    });
+}
 }
 
 module.exports = new AuthRepository();
