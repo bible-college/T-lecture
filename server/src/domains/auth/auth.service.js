@@ -101,8 +101,8 @@ class AuthService {
         lng: null,
       });
 
-// 2) InstructorVirtue (강사가능덕목) 관계 저장
-// 2) InstructorVirtue (강사가능덕목) 관계 저장
+      // 2) InstructorVirtue (강사가능덕목) 관계 저장
+      // 2) InstructorVirtue (강사가능덕목) 관계 저장
       await instructorRepository.addVirtues(newUser.id, virtueIds)
     } else {
       // 일반 유저
