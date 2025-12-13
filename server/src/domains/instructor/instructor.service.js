@@ -109,10 +109,6 @@ class InstructorService {
         );
     }
 
-    // 3. 자격이 충족되면 신청 접수 처리
-    // (실제로는 신청 테이블에 INSERT 해야 하지만, 과제 범위상 성공 메시지 반환으로 갈음하거나 로그를 남김)
-    console.log(`[Promotion] Instructor ${instructorId} requested promotion to ${desiredLevel}. (Current Hours: ${stats.lectureHours})`);
-
     return {
         message: '승급 신청이 성공적으로 접수되었습니다.',
         currentLevel: 'Assistant', // 예시
