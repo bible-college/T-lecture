@@ -30,10 +30,9 @@ class UnitRepository {
 
   /**
    * [변경] 필터 조건으로 부대 목록 및 개수 조회
-   * - 기존: findUnitsWithFilter
-   * - 변경: findUnitsByFilterAndCount (목록과 카운트를 같이 준다는 의미 강조)
+   * 이미 조립된 where 조건을 받아서 처리
    */
-  async findUnitsByFilterAndCount({ skip, take, where }) {
+async findUnitsByFilterAndCount({ skip, take, where }) {
     const [total, units] = await prisma.$transaction([
       prisma.unit.count({ where }),
       prisma.unit.findMany({
@@ -41,15 +40,7 @@ class UnitRepository {
         skip,
         take,
         orderBy: { id: 'desc' },
-        select: {
-          id: true,
-          name: true,
-          unitType: true,
-          wideArea: true,
-          region: true,
-          officerName: true,
-          officerPhone: true,
-        },
+        // 필요한 필드만 select 하거나 전체 반환
       }),
     ]);
 
