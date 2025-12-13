@@ -42,18 +42,6 @@ exports.respondAssignment = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
-// [확정 배정 상세 조회]
-exports.getAssignmentDetail = asyncHandler(async (req, res) => {
-  const { unitScheduleId } = req.params;
-
-  if (!unitScheduleId) {
-    throw new AppError('unitScheduleId가 필요합니다.', 400, 'VALIDATION_ERROR');
-  }
-
-  const detail = await assignmentService.getAssignmentDetail(req.user.id, unitScheduleId);
-  res.json(detail);
-});
-
 // [배정 후보 데이터 조회] (부대 + 강사)
 exports.getCandidates = asyncHandler(async (req, res) => {
   const { startDate, endDate } = req.query || {};
@@ -97,4 +85,26 @@ exports.autoAssign = asyncHandler(async (req, res) => {
   const result = await assignmentService.createAutoAssignments(s, e);
 
   res.status(200).json(result);
+});
+
+// [배정 취소]
+exports.cancelAssignmentByAdmin = asyncHandler(async (req, res) => {
+    // Body에서 instructorId와 unitScheduleId를 받음
+    const { unitScheduleId, instructorId } = req.body;
+
+    if (!unitScheduleId || !instructorId) {
+        throw new AppError('unitScheduleId와 instructorId가 필요합니다.', 400, 'VALIDATION_ERROR');
+    }
+
+    // Service 호출
+    // req.user.id: 요청자(관리자) ID
+    // req.user.role: 요청자 권한 (미들웨어에서 세팅되었다고 가정)
+    const result = await assignmentService.cancelAssignment(
+        req.user.id, 
+        req.user.role || 'ADMIN', // role이 없다면 로직에 맞게 조정
+        instructorId,             // 취소 당하는 강사 ID
+        unitScheduleId            // 스케줄 ID
+    );
+    
+    res.json(result);
 });

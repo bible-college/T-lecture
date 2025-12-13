@@ -95,37 +95,6 @@ class UnitRepository {
     });
   }
 
-  async findWithSchedules(startDate, endDate) {
-    return await prisma.unit.findMany({
-        where: {
-            schedules: {
-                some: {
-                    date: { gte: new Date(startDate), lte: new Date(endDate) },
-                },
-            },
-        },
-        include: {
-            trainingLocations: true, 
-            schedules: {
-                where: {
-                    date: { gte: new Date(startDate), lte: new Date(endDate) },
-                },
-                orderBy: { date: 'asc' },
-                include: {
-                    assignments: { where: { state: 'Active' } }
-                }
-            },
-        },
-        orderBy: { educationStart: 'asc' }
-    });
-    }
-
-
-
-
-
-
-
   /** 위/경도 갱신 */
   async updateCoords(unitId, lat, lng) {
     return prisma.unit.update({

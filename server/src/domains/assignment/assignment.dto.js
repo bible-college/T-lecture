@@ -40,57 +40,62 @@ class AssignmentDTO {
     mapUnitsToCards(units) {
         const list = [];
         units.forEach(unit => {
-            // 스케줄 날짜들 변환
-            const dateStr = toKSTDateString(unit.schedules[0]?.date);
-            
-            // 교육장소(Location) 별로 카드 쪼개기 (Explosion)
+            // 1. 교육장소 목록 준비
             const locations = (unit.trainingLocations && unit.trainingLocations.length > 0) 
                 ? unit.trainingLocations 
                 : [{ id: 'def', originalPlace: '교육장소 미정', instructorsNumbers: 0 }];
 
-            locations.forEach(loc => {
-                list.push({
-                    type: 'UNIT',
-                    id: `u-${unit.id}-s-${unit.schedules[0]?.id || 0}-l-${loc.id}`,
-                    
-                    // [Card UI]
-                    unitName: unit.name,
-                    originalPlace: loc.originalPlace,
-                    instructorsNumbers: loc.instructorsNumbers,
-                    date: dateStr,
-                    time: toKSTTimeString(unit.workStartTime),
-                    location: unit.region,
-                    
-                    // [Modal Detail]
-                    detail: {
-                        unitName: unit.name,
-                        region: unit.region,
-                        wideArea: unit.wideArea,
-                        address: unit.addressDetail,
-                        officerName: unit.officerName,
-                        officerPhone: unit.officerPhone,
-                        officerEmail: unit.officerEmail,
-                        originalPlace: loc.originalPlace,
-                        changedPlace: loc.changedPlace,
-                        instructorsNumbers: loc.instructorsNumbers,
-                        plannedCount: loc.plannedCount,
-                        actualCount: loc.actualCount,
-                        note: loc.note,
-                        
-                        // 날짜/시간 포맷팅
-                        educationStart: toKSTDateString(unit.educationStart),
-                        educationEnd: toKSTDateString(unit.educationEnd),
-                        workStartTime: toKSTTimeString(unit.workStartTime),
-                        workEndTime: toKSTTimeString(unit.workEndTime),
-                        lunchStartTime: toKSTTimeString(unit.lunchStartTime),
-                        lunchEndTime: toKSTTimeString(unit.lunchEndTime),
+            // 2. [수정] 스케줄(날짜)별로 반복
+            // 기존: const dateStr = toKSTDateString(unit.schedules[0]?.date);
+            unit.schedules.forEach(schedule => {
+                const dateStr = toKSTDateString(schedule.date);
 
-                        hasInstructorLounge: loc.hasInstructorLounge,
-                        hasWomenRestroom: loc.hasWomenRestroom,
-                        hasCateredMeals: loc.hasCateredMeals,
-                        hasHallLodging: loc.hasHallLodging,
-                        allowsPhoneBeforeAfter: loc.allowsPhoneBeforeAfter
-                    }
+                // 3. 교육장소별로 카드 생성
+                locations.forEach(loc => {
+                    list.push({
+                        type: 'UNIT',
+                        // ID에 스케줄 ID(schedule.id)를 포함해야 날짜별로 고유키가 됨
+                        id: `u-${unit.id}-s-${schedule.id}-l-${loc.id}`,
+                        
+                        // [Card UI]
+                        unitName: unit.name,
+                        originalPlace: loc.originalPlace,
+                        instructorsNumbers: loc.instructorsNumbers,
+                        date: dateStr, // ✅ 이제 각 스케줄의 날짜가 들어갑니다
+                        time: toKSTTimeString(unit.workStartTime),
+                        location: unit.region,
+                        
+                        // [Modal Detail]
+                        detail: {
+                            unitName: unit.name,
+                            region: unit.region,
+                            wideArea: unit.wideArea,
+                            address: unit.addressDetail,
+                            officerName: unit.officerName,
+                            officerPhone: unit.officerPhone,
+                            officerEmail: unit.officerEmail,
+                            originalPlace: loc.originalPlace,
+                            changedPlace: loc.changedPlace,
+                            instructorsNumbers: loc.instructorsNumbers,
+                            plannedCount: loc.plannedCount,
+                            actualCount: loc.actualCount,
+                            note: loc.note,
+                            
+                            // 날짜/시간 포맷팅
+                            educationStart: toKSTDateString(unit.educationStart),
+                            educationEnd: toKSTDateString(unit.educationEnd),
+                            workStartTime: toKSTTimeString(unit.workStartTime),
+                            workEndTime: toKSTTimeString(unit.workEndTime),
+                            lunchStartTime: toKSTTimeString(unit.lunchStartTime),
+                            lunchEndTime: toKSTTimeString(unit.lunchEndTime),
+
+                            hasInstructorLounge: loc.hasInstructorLounge,
+                            hasWomenRestroom: loc.hasWomenRestroom,
+                            hasCateredMeals: loc.hasCateredMeals,
+                            hasHallLodging: loc.hasHallLodging,
+                            allowsPhoneBeforeAfter: loc.allowsPhoneBeforeAfter
+                        }
+                    });
                 });
             });
         });
@@ -132,66 +137,68 @@ class AssignmentDTO {
 
     toHierarchicalResponse(unitsWithAssignments) {
         return unitsWithAssignments.map((unit) => {
-        // 1. 교육장소별 데이터 구성
-        const locations =
-            unit.trainingLocations && unit.trainingLocations.length > 0
-            ? unit.trainingLocations
-            : [
-                {
-                    id: 'default',
-                    originalPlace: '교육장소 미정',
-                    instructorsNumbers: 0,
-                },
-                ];
+            let totalRequired = 0;
+            let totalAssigned = 0;
 
-        const trainingLocations = locations.map((loc) => {
-            // 2. 각 장소 안에서 '날짜별' 스케줄 구성
-            const dates = unit.schedules.map((schedule) => {
-            const dateStr = toKSTDateString(schedule.date);
+            // 1. 교육장소별 데이터 구성
+            const locations = (unit.trainingLocations && unit.trainingLocations.length > 0)
+                ? unit.trainingLocations
+                : [{ id: 'default', originalPlace: '교육장소 미정', instructorsNumbers: 0 }];
 
-            // 현재 이 날짜(스케줄)에 배정된 강사들
-            const assignedInstructors = schedule.assignments.map((assign) => ({
-                id: assign.User.id,
-                name: assign.User.name,
-                phone: assign.User.userphoneNumber,
-                team: assign.User.instructor?.team?.name || '소속없음',
-                role: assign.User.instructor?.category || '강사',
-                status: assign.state, // Active | Canceled
-            }));
+            const trainingLocations = locations.map((loc) => {
+                // 부대 전체 필요 인원 집계 (장소별 필요인원 * 일수)
+                const daysCount = unit.schedules.length;
+                totalRequired += (loc.instructorsNumbers || 0) * daysCount;
 
-            return {
-                date: dateStr,
-                unitScheduleId: schedule.id,
-                requiredCount: loc.instructorsNumbers || 0, // 장소별 필요 인원
-                currentCount: assignedInstructors.length,   // (참고용) 현재 부대 전체 배정 인원
-                instructors: assignedInstructors,           // 강사 스택용 리스트
-            };
+                // 2. 각 장소 안에서 '날짜별' 스케줄 구성
+                const dates = unit.schedules.map((schedule) => {
+                    const dateStr = toKSTDateString(schedule.date);
+
+                    // 현재 이 날짜(스케줄)에 배정된 강사들
+                    const assignedInstructors = schedule.assignments
+                        .filter(a => a.state === 'Active')
+                        .map((assign) => {
+                            totalAssigned++; // 배정된 인원 카운트
+                            return {
+                                assignmentId: assign.unitScheduleId + '-' + assign.userId, // 고유키
+                                unitScheduleId: assign.unitScheduleId,
+                                instructorId: assign.userId,
+                                name: assign.User.name,
+                                team: assign.User.instructor?.team?.name || '소속없음',
+                                role: assign.classification, // Temporary | Confirmed
+                            };
+                        });
+
+                    return {
+                        date: dateStr,
+                        unitScheduleId: schedule.id,
+                        requiredCount: loc.instructorsNumbers || 0,
+                        instructors: assignedInstructors,
+                    };
+                });
+
+                return {
+                    id: loc.id,
+                    name: loc.originalPlace || '장소 미명',
+                    dates: dates,
+                };
             });
 
+            // 3. 부대 전체 요약 정보
+            const startDate = unit.schedules[0] ? toKSTDateString(unit.schedules[0].date) : '-';
+            const endDate = unit.schedules[unit.schedules.length - 1] ? toKSTDateString(unit.schedules[unit.schedules.length - 1].date) : '-';
+
             return {
-            id: loc.id,
-            name: loc.originalPlace || '장소 미명',
-            dates: dates,
+                unitId: unit.id,
+                unitName: unit.name,
+                region: `${unit.wideArea} ${unit.region}`,
+                period: `${startDate} ~ ${endDate}`, // 2025-05-01 ~ 2025-05-03
+                totalRequired,
+                totalAssigned,
+                // 진행률 (UI 막대바용)
+                progress: totalRequired > 0 ? Math.round((totalAssigned / totalRequired) * 100) : 0,
+                trainingLocations: trainingLocations, // 상세 모달용 데이터
             };
-        });
-
-        // 3. 부대 전체 요약 정보
-        const periodStart = unit.schedules[0]
-            ? toKSTDateString(unit.schedules[0].date)
-            : '-';
-        const periodEnd = unit.schedules[unit.schedules.length - 1]
-            ? toKSTDateString(unit.schedules[unit.schedules.length - 1].date)
-            : '-';
-
-        return {
-            unit: {
-            id: unit.id,
-            name: unit.name,
-            location: unit.region,
-            period: `${periodStart} ~ ${periodEnd}`,
-            },
-            trainingLocations: trainingLocations,
-        };
         });
     }
 }
