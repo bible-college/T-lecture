@@ -1,25 +1,24 @@
+// src/features/assignment/model/useAssignment.js
 import { useState, useCallback } from 'react';
-import { getAssignmentCandidates } from '../assignmentApi'; // 기존 API 재사용
+// 🟢 [수정] postAutoAssignment 추가 import
+import { getAssignmentCandidates, postAutoAssignment } from '../assignmentApi';
 
-// 🔴 수정 전: export const useAssignService = () => {
-// 🟢 수정 후: 아래와 같이 함수 이름을 useAssignment로 변경하세요.
 export const useAssignment = () => {
-    // 1. 상태 데이터 (Model)
     const [dateRange, setDateRange] = useState({
         startDate: new Date(),
         endDate: new Date(new Date().setDate(new Date().getDate() + 7))
     });
     
     const [sourceData, setSourceData] = useState({
-        units: [],       // 미배정 부대
-        instructors: []  // 가용 강사
+        units: [],
+        instructors: []
     });
 
-    const [assignments, setAssignments] = useState([]); // 배정 결과 (메모리 상)
+    const [assignments, setAssignments] = useState([]); 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // 2. 데이터 조회 로직
+    // 1. 데이터 조회
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -33,7 +32,7 @@ export const useAssignment = () => {
                 units: data.unassignedUnits || [],
                 instructors: data.availableInstructors || []
             });
-            setAssignments([]); // 재조회 시 배정 결과 초기화
+            setAssignments([]); // 초기화
         } catch (err) {
             setError(err.message || "데이터 조회 실패");
         } finally {
@@ -41,58 +40,59 @@ export const useAssignment = () => {
         }
     }, [dateRange]);
 
-    // 3. ★ 핵심 로직: 자동 배정 알고리즘 (UI와 분리됨)
-    const executeAutoAssign = () => {
-        const { units, instructors } = sourceData;
-        
-        if (units.length === 0 || instructors.length === 0) {
-            alert("배정할 데이터가 부족합니다.");
-            return;
-        }
+    // 2. 🟢 [수정] 자동 배정 실행 (API 호출)
+    const executeAutoAssign = async () => {
+        if (!confirm('현재 조건으로 자동 배정을 실행하시겠습니까?')) return;
 
-        const newAssignments = [];
-        const usedInstructorIds = new Set();
-
-        units.forEach((unit, index) => {
-            const instructor = instructors.find(inst => !usedInstructorIds.has(inst.id));
-            
-            if (instructor) {
-                newAssignments.push({
-                    unit: unit,
-                    instructor: instructor,
-                    status: 'PENDING'
-                });
-                usedInstructorIds.add(instructor.id);
-            }
-        });
-
-        setAssignments(newAssignments);
-        alert(`${newAssignments.length}건이 임시 배정되었습니다.`);
-    };
-
-    // 4. 저장 로직
-    const saveAssignments = async () => {
-        if (assignments.length === 0) return;
-        
+        setLoading(true);
         try {
-            alert("DB에 저장이 완료되었습니다.");
-            fetchData();
-        } catch (e) {
-            alert("저장 실패: " + e.message);
+            const startStr = dateRange.startDate.toISOString().split('T')[0];
+            const endStr = dateRange.endDate.toISOString().split('T')[0];
+
+            // 서버 API 호출 -> 계층형 결과 수신
+            const result = await postAutoAssignment(startStr, endStr);
+            console.log("🔥 [DEBUG] 서버 응답 데이터:", result); // 🟢 로그 확인 필수!
+            if (!result.data) {
+                console.error("데이터 구조가 이상합니다!", result);
+            }
+            setAssignments(result.data || []); 
+            alert(`배정이 완료되었습니다.`);
+        } catch (err) {
+            console.error(err);
+            alert(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
-    // View가 필요로 하는 데이터와 함수만 노출 (ViewModel 역할)
-    // 🔴 중요: 리턴하는 변수명 중 unassignedUnits, availableInstructors로 매핑해서 내보내야 
-    // AssignmentWorkspace.jsx에서 구조 분해 할당(destructuring)이 정상 작동합니다.
+    // 3. 저장 로직 (이미 서버에 저장된 상태를 불러오므로 여기선 새로고침 정도만)
+    const saveAssignments = async () => {
+        alert("서버에 이미 저장된 상태입니다. (재조회)");
+        fetchData();
+    };
+    const removeAssignment = async (unitScheduleId, instructorId) => {
+        try {
+            setLoading(true);
+            await cancelAssignmentApi(unitScheduleId, instructorId);
+            alert('배정이 취소되었습니다.');
+            
+            // 화면 갱신을 위해 데이터 재조회
+            await fetchData(); 
+        } catch (e) {
+            alert(e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
     return {
         dateRange, setDateRange,
         loading, error,
-        unassignedUnits: sourceData.units,        // 변경됨 (units -> unassignedUnits)
-        availableInstructors: sourceData.instructors, // 변경됨 (instructors -> availableInstructors)
+        unassignedUnits: sourceData.units,
+        availableInstructors: sourceData.instructors,
         assignments, 
         fetchData,
         executeAutoAssign,
-        saveAssignments
+        saveAssignments,
+        removeAssignment
     };
 };
