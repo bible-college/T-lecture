@@ -3,9 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { useAssignment } from '../model/useAssignment';
 import { Button } from '../../../shared/ui/Button'; 
-import { AssignmentDetailModal } from './AssignmentDetailModal'; 
 import { MiniCalendar } from '../../../shared/ui/MiniCalendar'; 
-
+import { AssignmentDetailModal, AssignmentGroupDetailModal } from './AssignmentDetailModal';
 export const AssignmentWorkspace = () => {
     const { 
         dateRange, 
@@ -14,11 +13,15 @@ export const AssignmentWorkspace = () => {
         error, 
         unassignedUnits, 
         availableInstructors,
-        fetchData 
+        assignments, 
+        fetchData,
+        executeAutoAssign,
+        saveAssignments,
+        removeAssignment
     } = useAssignment();
 
     const [selectedItem, setSelectedItem] = useState(null);
-    
+    const [detailModalData, setDetailModalData] = useState(null)
     // 캘린더 팝업 상태
     const [calendarPopup, setCalendarPopup] = useState({
         visible: false,
@@ -98,7 +101,7 @@ export const AssignmentWorkspace = () => {
                                         <div className="font-bold text-gray-800 text-sm flex justify-between items-center mb-1">
                                             <div className="flex items-center gap-2">
                                                 <span>{unit.unitName}</span>
-                                                {/* [수정] 교육장소 표시 (originalPlace) */}
+                                                {/* 교육장소 표시 */}
                                                 {unit.originalPlace && (
                                                     <span className="text-[11px] font-normal text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
                                                         {unit.originalPlace}
@@ -109,7 +112,6 @@ export const AssignmentWorkspace = () => {
                                         </div>
                                         <div className="text-xs text-gray-500 mt-1 flex justify-between items-end">
                                             <span>📍 {unit.location}</span>
-                                            {/* [수정] 주/보 삭제 -> 필요 인원만 표시 */}
                                             <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded font-bold border border-blue-100">
                                                 필요 인원: {unit.instructorsNumbers}명
                                             </span>
@@ -144,14 +146,12 @@ export const AssignmentWorkspace = () => {
                                             <div className="font-bold text-gray-800 text-sm flex items-center gap-2">
                                                 {inst.name} 
                                                 
-                                                {/* [수정] 팀 이름 배지 추가 */}
                                                 {inst.teamName && (
                                                     <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">
                                                         {inst.teamName}
                                                     </span>
                                                 )}
 
-                                                {/* 역할/분류 배지 */}
                                                 <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
                                                     inst.category === 'Main' ? 'bg-green-50 text-green-700 border-green-200' : 
                                                     inst.category === 'Assistant' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-600'
@@ -181,13 +181,62 @@ export const AssignmentWorkspace = () => {
                 {/* Right Column */}
                 <div className="flex flex-col gap-4 overflow-hidden">
                     <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                         <div className="p-3 bg-orange-50 border-b border-orange-100 border-l-4 border-l-orange-500 font-bold text-gray-700">
-                            <span>⚖️ 임시 배정 (작업 공간)</span>
+                         <div className="p-3 bg-orange-50 border-b border-orange-100 border-l-4 border-l-orange-500 font-bold text-gray-700 flex justify-between items-center">
+                            <span>⚖️ 배정 작업 공간 (부대별)</span>
+                            <div className="flex gap-2">
+                                <Button size="xsmall" variant="ghost" onClick={executeAutoAssign}>자동 배정</Button>
+                                {assignments.length > 0 && <Button size="xsmall" onClick={saveAssignments}>저장</Button>}
+                            </div>
                         </div>
-                        <div className="flex-1 p-4 bg-gray-50/50 flex items-center justify-center border-2 border-dashed border-gray-300 m-4 rounded-xl">
-                            <div className="text-center"><span className="text-3xl block mb-2">👆</span><span className="text-gray-400 text-sm">왼쪽에서 강사를 선택하여<br/>이곳으로 드래그하세요.</span></div>
+                        
+                        <div className="flex-1 p-4 overflow-y-auto bg-gray-50/50">
+                            {assignments.length === 0 ? (
+                                <div className="flex items-center justify-center h-full border-2 border-dashed border-gray-300 m-4 rounded-xl">
+                                    <div className="text-center text-gray-400">임시 배정이 없습니다.</div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {/* 🟢 부대별 요약 카드 렌더링 */}
+                                    {assignments.map((group) => (
+                                        <div 
+                                            key={group.unitId} 
+                                            onClick={() => setDetailModalData(group)} // 클릭 시 상세 모달 오픈
+                                            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md cursor-pointer transition-all border-l-4 border-l-indigo-500"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 className="font-bold text-gray-800 text-lg">{group.unitName}</h3>
+                                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{group.region}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-xs font-bold text-indigo-600">{group.period}</div>
+                                                    <div className="text-xs text-gray-400">총 {group.trainingLocations.length}개 교육장</div>
+                                                </div>
+                                            </div>
+
+                                            {/* 인원 충원율 게이지 */}
+                                            <div className="mt-3">
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-gray-600">배정 현황</span>
+                                                    <span className={`font-bold ${group.progress === 100 ? 'text-green-600' : 'text-orange-500'}`}>
+                                                        {group.totalAssigned} / {group.totalRequired}명 ({group.progress}%)
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                                    <div 
+                                                        className={`h-2 rounded-full transition-all ${group.progress >= 100 ? 'bg-green-500' : 'bg-orange-400'}`}
+                                                        style={{ width: `${Math.min(group.progress, 100)}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
+
+                    {/* Panel 4: 확정 배정 완료 */}
                     <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                          <div className="p-3 bg-blue-50 border-b border-blue-100 border-l-4 border-l-blue-500 font-bold text-gray-700">
                             <span>✅ 확정 배정 완료</span>
@@ -222,6 +271,14 @@ export const AssignmentWorkspace = () => {
                         className="shadow-2xl border-blue-200 ring-2 ring-blue-100 bg-white"
                     />
                 </div>
+            )}
+
+            {detailModalData && (
+                <AssignmentGroupDetailModal 
+                    group={detailModalData} 
+                    onClose={() => setDetailModalData(null)}
+                    onRemove={removeAssignment}
+                />
             )}
         </div>
     );

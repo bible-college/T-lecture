@@ -22,6 +22,22 @@ export const getAssignmentCandidates = async (startDate, endDate) => {
     // 반환값 예시: { unassignedUnits: [...], availableInstructors: [...] }
 };
 
-/**
- * (추가 예정) 배정 확정 API 등도 여기에 추가하면 됩니다.
- */
+export const postAutoAssignment = async (startDate, endDate) => {
+    const res = await apiClient("/api/v1/assignments/auto-assign", {
+        method: "POST",
+        body: JSON.stringify({ startDate, endDate }),
+    });
+    if (!res.ok) throw new Error("자동 배정 실행에 실패했습니다.");
+    
+    // 서버가 계층형 JSON 구조를 반환해줍니다.
+    return res.json(); 
+};
+
+export const cancelAssignmentApi = async (unitScheduleId, instructorId) => {
+    const res = await apiClient(`/api/v1/assignments/${unitScheduleId}/cancel`, {
+        method: "PATCH",
+        body: JSON.stringify({ unitScheduleId, instructorId }),
+    });
+    if (!res.ok) throw new Error("배정 취소에 실패했습니다.");
+    return res.json();
+};
