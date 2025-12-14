@@ -7,8 +7,8 @@ class UserRepository {
       return await prisma.user.findUnique({
         where: { userEmail: email },
         include: { 
-          instructor: true, // 기존 코드
-          admin: true       // ✅ [추가] Admin 테이블 정보도 함께 가져오기
+          instructor: true, 
+          admin: true   
         }, 
       });
   }

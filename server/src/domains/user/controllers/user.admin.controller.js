@@ -2,7 +2,7 @@
 const adminService = require('../services/user.admin.service');
 const asyncHandler = require('../../../common/middlewares/asyncHandler');
 const logger = require('../../../config/logger');
-const AppError = require('../../../common/errors/AppError'); // ✅ 경로 확인 필요
+const AppError = require('../../../common/errors/AppError');
 
 // ✅ :userId 파라미터를 안전하게 숫자로 변환 + 검증
 function parseUserIdParam(req) {
@@ -23,24 +23,28 @@ function parseUserIdParam(req) {
   return userId;
 }
 
+// ✅ 전체 사용자 조회
 exports.getUsers = asyncHandler(async (req, res) => {
   const users = await adminService.getAllUsers(req.query);
   res.json(users);
 });
 
+// ✅ 대기 사용자 조회
 exports.getPendingUsers = asyncHandler(async (req, res) => {
   const users = await adminService.getPendingUsers();
   res.json(users);
 });
 
+// ✅ 사용자 ID로 조회
 exports.getUserById = asyncHandler(async (req, res) => {
-  const userId = parseUserIdParam(req); // ✅ 핵심
+  const userId = parseUserIdParam(req); 
   const user = await adminService.getUserById(userId);
   res.json(user);
 });
 
+// ✅ 사용자 ID로 수정
 exports.updateUser = asyncHandler(async (req, res) => {
-  const userId = parseUserIdParam(req); // ✅ 핵심
+  const userId = parseUserIdParam(req); 
   const updatedUser = await adminService.updateUser(userId, req.body);
 
   logger.info('[admin.updateUser]', {
@@ -52,8 +56,9 @@ exports.updateUser = asyncHandler(async (req, res) => {
   res.json(updatedUser);
 });
 
+// ✅ 사용자 ID로 삭제
 exports.deleteUser = asyncHandler(async (req, res) => {
-  const userId = parseUserIdParam(req); // ✅ 핵심
+  const userId = parseUserIdParam(req); 
   const result = await adminService.deleteUser(userId);
 
   logger.info('[admin.deleteUser]', {

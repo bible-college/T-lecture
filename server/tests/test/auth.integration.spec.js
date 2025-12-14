@@ -28,6 +28,7 @@ describe('Auth API Integration Test (Full Coverage, No Sinon)', () => {
   // 로그인 후 토큰/쿠키 검증용
   let approvedUserId;
   let approvedAccessToken;
+  let refreshTokenValue; // 👈 [추가] 리프레시 토큰 값을 저장할 변수
 
   // ✅ 성공/에러 모두 JSON 출력
   const logResponse = (res, label) => {
@@ -289,10 +290,11 @@ describe('Auth API Integration Test (Full Coverage, No Sinon)', () => {
     const setCookie = res.headers['set-cookie'] || [];
     expect(setCookie.join(' ')).to.include('refreshToken=');
 
-    // (선택) refresh 토큰이 jwt 형식인지 확인
+    // 👈 [수정] refresh 토큰 값 추출 및 저장
     const cookieLine = setCookie.find((c) => c.startsWith('refreshToken='));
     if (cookieLine) {
       const refreshToken = cookieLine.split(';')[0].split('=')[1];
+      refreshTokenValue = refreshToken; // 👈 값 저장
       const payload = jwt.verify(refreshToken, REFRESH_SECRET);
       expect(payload.userId).to.equal(approvedUserId);
     }
@@ -306,7 +308,12 @@ describe('Auth API Integration Test (Full Coverage, No Sinon)', () => {
   });
 
   it('[POST] /refresh - Success (200)', async () => {
-    const res = await agent.post(`${BASE}/refresh`).send({});
+    // 👈 [수정] agent 대신 request(app)을 사용하고 쿠키를 수동으로 설정하여 안정성을 높입니다.
+    const res = await request(app) 
+      .post(`${BASE}/refresh`)
+      .set('Cookie', `refreshToken=${refreshTokenValue}`) // 👈 저장된 토큰 값 사용
+      .send({});
+      
     logResponse(res, 'Refresh Success');
     expect(res.status).to.equal(200);
     expect(res.body).to.have.property('accessToken');

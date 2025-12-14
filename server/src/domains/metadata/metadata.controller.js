@@ -27,12 +27,10 @@ exports.getMessageTemplates = asyncHandler(async (req, res) => {
   res.status(200).json(templates);
 });
 
-// [PUT] 팀 수정
+// 팀 수정
 exports.updateTeam = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
-    
-    // ✅ 컨트롤러 레벨 검증 추가
     if (!name) {
         throw new AppError('팀 이름(name)이 필요합니다.', 400, 'VALIDATION_ERROR');
     }
@@ -41,12 +39,10 @@ exports.updateTeam = asyncHandler(async (req, res) => {
     res.json(updated);
 });
 
-// [PUT] 덕목 수정
+// 덕목 수정
 exports.updateVirtue = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
-
-    // ✅ 컨트롤러 레벨 검증 추가
     if (!name) {
         throw new AppError('덕목 이름(name)이 필요합니다.', 400, 'VALIDATION_ERROR');
     }
@@ -55,12 +51,10 @@ exports.updateVirtue = asyncHandler(async (req, res) => {
     res.json(updated);
 });
 
-// [PUT] 템플릿 수정
+// 메시지 템플릿 수정
 exports.updateTemplate = asyncHandler(async (req, res) => {
-    const { key } = req.params; // 예: TEMPORARY
+    const { key } = req.params; 
     const { title, body } = req.body;
-
-    // ✅ 컨트롤러 레벨 검증 추가
     if (!title || !body) {
         throw new AppError('템플릿 제목(title)과 본문(body)이 모두 필요합니다.', 400, 'VALIDATION_ERROR');
     }

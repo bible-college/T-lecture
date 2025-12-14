@@ -13,6 +13,9 @@ class UserMeService {
         }
 
         const { password, ...profile } = user;
+        if (!profile.instructor) {
+            delete profile.instructor;
+        }
         return profile;
     }
 
@@ -71,16 +74,15 @@ class UserMeService {
         instructorData.lng = null;
         }
 
-        // 강사가 아닌데 address만 보내면 어떻게 할지 정책 선택:
-        // - 무시(현재처럼) OR 400 에러
         if (!isInstructor && address !== undefined) {
-        // 원하면 무시 대신 에러로 강제 가능
-        // throw new AppError('강사만 주소를 수정할 수 있습니다.', 403, 'ADDRESS_FORBIDDEN');
         }
 
         const updatedUser = await userRepository.update(userId, userData, instructorData);
 
         const { password, ...result } = updatedUser;
+        if (!result.instructor) {
+            delete result.instructor;
+        }
         return result;
     }
 

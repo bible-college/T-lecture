@@ -4,6 +4,7 @@ const AppError = require('../../common/errors/AppError');
 
 class MetadataService {
 
+    // 강사 가입용 메타데이터 (통합)
     async getInstructorMeta() {
         const [virtues, teams, categories] = await Promise.all([
         metadataRepository.findVirtues(),
@@ -14,30 +15,22 @@ class MetadataService {
         return { virtues, teams, categories };
     }
 
-    /**
-     * [개별] 팀 목록 전체 조회
-     */
+    // 팀 목록 전체 조회
     async getAllTeams() {
         return await metadataRepository.findTeams();
     }
 
-    /**
-     * [개별] 덕목 목록 전체 조회
-     */
+    // 덕목 목록 전체 조회
     async getAllVirtues() {
         return await metadataRepository.findVirtues();
     }
 
-    /**
-     * [개별] 메시지 템플릿 목록 조회
-     */
+    // 메시지 템플릿 목록 조회
     async getMessageTemplates() {
         return await metadataRepository.findMessageTemplates();
     }
 
-    /**
-     * 팀 정보 수정
-     */
+    // 팀 정보 수정
     async updateTeam(id, name) {
         if (!id || !name) throw new AppError('팀 ID와 이름이 필요합니다.', 400, 'VALIDATION_ERROR');
         try {
@@ -48,9 +41,7 @@ class MetadataService {
         }
     }
 
-    /**
-     * 덕목 정보 수정
-     */
+    // 덕목 정보 수정
     async updateVirtue(id, name) {
         if (!id || !name) throw new AppError('덕목 ID와 이름이 필요합니다.', 400, 'VALIDATION_ERROR');
         try {
@@ -61,9 +52,7 @@ class MetadataService {
         }
     }
 
-    /**
-     * 메시지 템플릿 수정
-     */
+    // 메시지 템플릿 수정
     async updateMessageTemplate(key, title, body) {
         if (!key || !title || !body) throw new AppError('템플릿 Key, 제목, 본문이 모두 필요합니다.', 400, 'VALIDATION_ERROR');
         try {
