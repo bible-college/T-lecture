@@ -1,12 +1,60 @@
 {
-  "name": "t-lecture",
+  "name": "@t-lecture/server",
+  "version": "0.0.1",
   "private": true,
-  "workspaces": [
-    "server",
-    "client"
-  ],
+  "description": "T-LECTURE Backend Server",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "prisma": {
+    "schema": "./prisma",
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
-    "dev:client": "npm run dev --prefix client",
-    "dev:server": "npm run dev --prefix server"
+    "dev": "nodemon src/server.js",
+    "build": "prisma generate",
+    "start": "node src/server.js",
+    "prisma:format": "prisma format",
+    "prisma:validate": "prisma validate",
+    "db:push": "npm run prisma:format && npm run prisma:validate && prisma db push",
+    "db:migrate": "npm run prisma:format && npm run prisma:validate && prisma migrate dev",
+    "db:studio": "prisma studio",
+    "test": "mocha test/**/*.spec.js --timeout 10000 --exit",
+    "test:integration": "mocha test/auth.integration.spec.js --timeout 10000 --exit",
+    "test:integration1": "mocha test/user.admin.integration.spec.js --timeout 10000 --exit",
+    "test:integration2": "mocha test/user.me.integration.spec.js --timeout 10000 --exit",
+    "test:integration3": "mocha test/assignment_integration.spec.js --timeout 10000 --exit",
+    "test:integration4": "mocha test/message.integration.spec.js --timeout 10000 --exit",
+    "test:integration5": "mocha test/unit.integration.spec.js --timeout 10000 --exit",
+    "test:integration6": "mocha test/metadata.integration.spec.js --timeout 10000 --exit",
+    "test:integration8": "mocha test/distance_integration.spec.js --timeout 10000 --exit",
+    "test:integration9": "mocha test/instructor.integration.spec.js --timeout 10000 --exit"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.10",
+    "readline-sync": "^1.4.10",
+    "xlsx": "^0.18.5",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "chai": "^6.2.1",
+    "mocha": "^11.7.5",
+    "nodemon": "^3.1.9",
+    "prisma": "^6.19.0",
+    "supertest": "^7.1.4"
   }
 }
