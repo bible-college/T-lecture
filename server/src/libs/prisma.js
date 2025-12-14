@@ -1,6 +1,17 @@
-// server/src/libs/prisma.js
-const { PrismaClient } = require('@prisma/client');
+// src/libs/prisma.js
+require('dotenv').config();
 
-const prisma = new PrismaClient();
+const { PrismaClient } = require('@prisma/client');
+const config = require('../config');
+
+if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = config.databaseUrl;
+}
+
+const prisma = new PrismaClient({
+    datasources: {
+        db: { url: process.env.DATABASE_URL },
+    },
+});
 
 module.exports = prisma;

@@ -1,208 +1,244 @@
-//server/src/domains/user/services/admin.service.js
-const adminRepository = require('../../user/repositories/user.admin.repository');
+// server/src/domains/user/services/user.admin.service.js
+
+const adminRepository = require('../repositories/user.admin.repository');
 const userRepository = require('../repositories/user.repository');
+const AppError = require('../../../common/errors/AppError');
+
+const ALLOWED_USER_STATUS = ['PENDING', 'APPROVED', 'RESTING', 'INACTIVE'];
+
+// 파서 boolean
+function parseBool(v) {
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'string') return v.toLowerCase() === 'true';
+    return false;
+}
+// 응답 객체에서 password와 admin 정보를 제거하고, 강사 정보는 남깁니다.
+function mapUserForAdmin(user) {
+    if (!user) return null;
+    const { password, admin, instructor, ...rest } = user; 
+    if (instructor) {
+        return { instructor, ...rest };
+    }
+    return rest; 
+}
+// querystring을 repo가 이해하는 형태로 변환
+function normalizeFilters(query = {}) {
+    const filters = { ...query };
+    if (!filters.status) filters.status = 'APPROVED';
+    if (filters.status === 'ALL') delete filters.status;
+    if (filters.name !== undefined && filters.name !== null && String(filters.name).trim() === '') {
+        delete filters.name;
+    }
+    const role = (filters.role || '').toString().toUpperCase();
+    if (role === 'ADMIN') {
+        filters.onlyAdmins = true;
+        delete filters.onlyInstructors;
+    } else if (role === 'INSTRUCTOR') {
+        filters.onlyInstructors = true;
+        delete filters.onlyAdmins;
+    } else if (role === 'ALL' || role === '') {
+    }
+    if (filters.onlyAdmins !== undefined) filters.onlyAdmins = parseBool(filters.onlyAdmins);
+    if (filters.onlyInstructors !== undefined) filters.onlyInstructors = parseBool(filters.onlyInstructors);
+    delete filters.role;
+
+    return filters;
+}
+// dto 검증
+function assertDtoObject(dto) {
+    if (!dto || typeof dto !== 'object' || Array.isArray(dto)) {
+        throw new AppError('요청 바디 형식이 올바르지 않습니다.', 400, 'INVALID_BODY');
+    }
+}
+// dto 검증
+function assertStringOrUndefined(value, fieldName) {
+    if (value === undefined) return;
+    if (value === null) return; 
+    if (typeof value !== 'string') {
+        throw new AppError(`${fieldName}는 문자열이어야 합니다.`, 400, 'INVALID_INPUT');
+    }
+}
+// dto 검증
+function assertValidStatusOrUndefined(status) {
+    if (status === undefined) return;
+    if (typeof status !== 'string') {
+        throw new AppError('status는 문자열이어야 합니다.', 400, 'INVALID_STATUS');
+    }
+    if (!ALLOWED_USER_STATUS.includes(status)) {
+        throw new AppError(
+            `유효하지 않은 status 입니다. allowed: ${ALLOWED_USER_STATUS.join(', ')}`,
+            400,
+            'INVALID_STATUS'
+        );
+    }
+}
 
 class AdminService {
-    /**
-     * [신규] 전체 유저 목록 조회 (검색/필터 포함)
-     */
+    // 모든 유저 조회
     async getAllUsers(query) {
-    // query: { status, name }
-    const filters = { ...query };
+        const filters = normalizeFilters(query);
+        const users = await adminRepository.findAll(filters);
 
-    // 🔹 별도로 status를 안 넘기면 기본은 APPROVED 만
-    if (!filters.status) {
-        filters.status = 'APPROVED';
+        return users.map(mapUserForAdmin); 
     }
 
-    const users = await adminRepository.findAll(filters);
-
-    // 비밀번호 제외
-    return users.map((user) => {
-        const { password, ...rest } = user;
-        return rest;
-    });
-    }
-
-    /**
-     * [기존] 승인 대기 유저 목록 조회
-     * - findAll 메서드를 재사용하여 구현합니다.
-     */
+    // 승인 대기 유저 조회
     async getPendingUsers() {
         const users = await adminRepository.findAll({ status: 'PENDING' });
-        
-        return users.map(user => {
-        const { password, ...rest } = user;
-        return rest;
-        });
+        return users.map(mapUserForAdmin); 
     }
 
-    /**
-     * [신규] 특정 유저 상세 조회
-     * - UserRepository의 findById를 사용하여 상세 정보를 가져옵니다.
-     */
+    // 단일 유저 조회
     async getUserById(id) {
-        const user = await userRepository.findById(id);
-        if (!user) {
-        throw new Error('해당 회원을 찾을 수 없습니다.');
-        }
+        const user = await userRepository.findById(id); 
+        if (!user) throw new AppError('해당 회원을 찾을 수 없습니다.', 404, 'USER_NOT_FOUND');
 
-        const { password, ...rest } = user;
-        return rest;
+        return mapUserForAdmin(user); 
     }
 
-    /**
-     * [신규] 유저 정보 강제 수정 (관리자 권한)
-     */
+    // 유저 수정
     async updateUser(id, dto) {
+        assertDtoObject(dto);
+
         const { name, phoneNumber, status, address, isTeamLeader } = dto;
 
-        // 1. User 테이블 수정 데이터
+        assertStringOrUndefined(name, 'name');
+        assertStringOrUndefined(phoneNumber, 'phoneNumber');
+        assertStringOrUndefined(address, 'address');
+        assertValidStatusOrUndefined(status);
+
+        if (isTeamLeader !== undefined && typeof isTeamLeader !== 'boolean') {
+            throw new AppError('isTeamLeader는 boolean이어야 합니다.', 400, 'INVALID_INPUT');
+        }
+
+        const hasAny =
+            name !== undefined ||
+            phoneNumber !== undefined ||
+            status !== undefined ||
+            address !== undefined ||
+            isTeamLeader !== undefined;
+
+        if (!hasAny) {
+            throw new AppError('수정할 값이 없습니다.', 400, 'NO_UPDATE_FIELDS');
+        }
+
+        const user = await userRepository.findById(id);
+        if (!user) throw new AppError('해당 회원을 찾을 수 없습니다.', 404, 'USER_NOT_FOUND');
+
         const userData = {};
         if (name !== undefined) userData.name = name;
         if (phoneNumber !== undefined) userData.userphoneNumber = phoneNumber;
         if (status !== undefined) userData.status = status;
 
-        // 2. Instructor 테이블 수정 데이터 (주소 등)
         const instructorData = {};
-        if (address !== undefined) {
-            instructorData.location = address;
-            // 주소 변경 시 좌표 초기화
-            instructorData.lat = null;
-            instructorData.lng = null;
+        const isInstructor = !!user.instructor;
+
+        if (isInstructor) {
+            if (address !== undefined) {
+                instructorData.location = address;
+                instructorData.lat = null;
+                instructorData.lng = null;
+            }
+            if (typeof isTeamLeader === 'boolean') {
+                instructorData.isTeamLeader = isTeamLeader;
+            }
         }
-        if (typeof isTeamLeader === 'boolean') {
-            instructorData.isTeamLeader = isTeamLeader;
-        }
-        // 3. 업데이트 실행 (User Repo 재사용)
+
         const updatedUser = await userRepository.update(id, userData, instructorData);
         
-        const { password, ...rest } = updatedUser;
-        return rest;
+        return mapUserForAdmin(updatedUser); 
     }
 
-    /**
-     * [신규] 유저 삭제 (강제 탈퇴)
-     * - UserRepository의 delete 메서드를 사용하여 일관성 유지
-     */
+    // 유저 삭제
     async deleteUser(id) {
-        // 존재 여부 확인
         const user = await userRepository.findById(id);
-        if (!user) {
-        throw new Error('해당 회원을 찾을 수 없습니다.');
-        }
-        
-        // 삭제 수행 (UserRepository 사용)
+        if (!user) throw new AppError('해당 회원을 찾을 수 없습니다.', 404, 'USER_NOT_FOUND');
+
         await userRepository.delete(id);
-        
         return { message: '회원이 삭제되었습니다.' };
     }
 
-    /**
-     * [기존] 유저 승인 처리
-     */
+    // 유저 승인
     async approveUser(userId) {
         const updatedUser = await adminRepository.updateUserStatus(userId, 'APPROVED');
-
-        const { password, ...rest } = updatedUser;
-
+        
         return {
             message: '승인 처리가 완료되었습니다.',
-            user: rest,
+            user: mapUserForAdmin(updatedUser), // ✅ mapUserForAdmin 적용
         };
     }
 
-    /**
-     * [기존] 유저 일괄 승인 처리
-     */
+    // 유저 승인(일괄)
     async approveUsersBulk(userIds) {
         if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-        throw new Error('승인할 유저 ID 목록(배열)이 필요합니다.');
+            throw new AppError('승인할 유저 ID 목록(배열)이 필요합니다.', 400, 'INVALID_INPUT');
         }
 
         const result = await adminRepository.updateUsersStatusBulk(userIds, 'APPROVED');
 
         return {
-        message: `${result.count}명의 유저가 승인되었습니다.`,
-        count: result.count,
+            message: `${result.count}명의 유저가 승인되었습니다.`,
+            count: result.count,
         };
     }
 
-    /**
-     * [기존] 유저 승인 거절
-     * - 거절은 곧 데이터 삭제를 의미합니다.
-     */
+    // 유저 거절
     async rejectUser(userId) {
-        // 유저 상태 확인
         const user = await userRepository.findById(userId);
-        if (!user) {
-        throw new Error('사용자를 찾을 수 없습니다.');
-        }
+        if (!user) throw new AppError('사용자를 찾을 수 없습니다.', 404, 'USER_NOT_FOUND');
         if (user.status !== 'PENDING') {
-        throw new Error('승인 대기 중인 사용자만 거절할 수 있습니다.');
+            throw new AppError('승인 대기 중인 사용자만 거절할 수 있습니다.', 400, 'INVALID_STATUS');
         }
 
-        // 삭제 수행
         await userRepository.delete(userId);
-
         return { message: '회원가입 요청을 거절하고 데이터를 삭제했습니다.' };
     }
 
-    /**
-     * [기존] 유저 일괄 거절
-     */
+    // 유저 거절(일괄)
     async rejectUsersBulk(userIds) {
         if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-        throw new Error('거절할 유저 ID 목록(배열)이 필요합니다.');
+            throw new AppError('거절할 유저 ID 목록(배열)이 필요합니다.', 400, 'INVALID_INPUT');
         }
 
         const result = await adminRepository.deleteUsersBulk(userIds);
 
         return {
-        message: `${result.count}명의 가입 요청을 거절(삭제)했습니다.`,
-        count: result.count,
+            message: `${result.count}명의 가입 요청을 거절(삭제)했습니다.`,
+            count: result.count,
         };
     }
 
+    // 관리자 권한 부여/회수
     async setAdminLevel(userId, level = 'GENERAL') {
-        if (level === 'SUPER') {
-            throw new Error('슈퍼 관리자로의 승급은 불가능합니다.');
-        }
-        if (level !== 'GENERAL') {
-            throw new Error('잘못된 관리자 레벨입니다.');
+        const normalized = (level || 'GENERAL').toString().toUpperCase();
+        if (!['GENERAL', 'SUPER'].includes(normalized)) {
+            throw new AppError('잘못된 관리자 레벨입니다.', 400, 'INVALID_ADMIN_LEVEL');
         }
 
-        // 존재 여부 확인
         const user = await userRepository.findById(userId);
-        if (!user) throw new Error('해당 회원을 찾을 수 없습니다.');
+        if (!user) throw new AppError('해당 회원을 찾을 수 없습니다.', 404, 'USER_NOT_FOUND');
 
-        const admin = await adminRepository.upsertAdmin(userId, level);
+        const admin = await adminRepository.upsertAdmin(userId, normalized);
 
         return {
-        message: '관리자 권한이 설정되었습니다.',
-        userId: userId,
-        adminLevel: admin.level,
+            message: '관리자 권한이 설정되었습니다.',
+            userId: Number(userId),
+            adminLevel: admin.level,
         };
     }
 
-    // ✅ 관리자 권한 회수
+    // 관리자 권한 회수
     async revokeAdminLevel(userId) {
         const user = await userRepository.findById(userId);
-        if (!user) throw new Error('해당 회원을 찾을 수 없습니다.');
+        if (!user) throw new AppError('해당 회원을 찾을 수 없습니다.', 404, 'USER_NOT_FOUND');
 
         await adminRepository.removeAdmin(userId);
 
         return {
-        message: '관리자 권한이 해제되었습니다.',
-        userId,
+            message: '관리자 권한이 해제되었습니다.',
+            userId: Number(userId),
         };
     }
 }
-
-
-
-
-
-
 
 module.exports = new AdminService();

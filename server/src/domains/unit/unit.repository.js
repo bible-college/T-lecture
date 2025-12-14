@@ -2,20 +2,10 @@
 const prisma = require('../../libs/prisma');
 
 class UnitRepository {
-
-  async create(data) {
-    const { trainingLocations, schedules, ...unitData } = data;
-
+  // 부대 단건 DB 삽입 (Insert)
+  async insertOneUnit(data) {
     return prisma.unit.create({
-      data: {
-        ...unitData,
-        ...(trainingLocations && trainingLocations.length
-          ? { trainingLocations: { create: trainingLocations } }
-          : {}),
-        ...(schedules && schedules.length
-          ? { schedules: { create: schedules } }
-          : {}),
-      },
+      data,
       include: {
         trainingLocations: true,
         schedules: true,
@@ -23,58 +13,81 @@ class UnitRepository {
     });
   }
 
-  /** 전체 부대 목록 조회 */
-  async findAll() {
-    return prisma.unit.findMany({
-      include: {
-        trainingLocations: true,
-        schedules: true,
-      },
-      orderBy: {
-        id: 'desc',
-      },
-    });
+  // 부대 다건 일괄 삽입 (Bulk Insert with Transaction)
+  async insertManyUnits(dataArray) {
+    return prisma.$transaction(
+      dataArray.map((data) =>
+        prisma.unit.create({
+          data,
+        })
+      )
+    );
   }
 
-  /** 특정 부대 상세 조회 */
-  async findById(id) {
+  // 필터 조건으로 부대 목록 및 개수 조회
+async findUnitsByFilterAndCount({ skip, take, where }) {
+    const [total, units] = await prisma.$transaction([
+      prisma.unit.count({ where }),
+      prisma.unit.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { id: 'desc' },
+      }),
+    ]);
+
+    return { total, units };
+  }
+
+  // 부대 상세 정보(하위 데이터 포함) 조회
+  async findUnitWithRelations(id) {
     return prisma.unit.findUnique({
       where: { id: Number(id) },
       include: {
         trainingLocations: true,
-        schedules: true,
+        schedules: {
+          orderBy: { date: 'asc' },
+        },
       },
     });
   }
 
-  /**
-   * 부대 정보 수정
-   * - Unit 기본 정보만 수정
-   * - 교육장소/일정 수정은 별도 로직으로 분리
-   */
-  async update(id, data) {
-    const { trainingLocations, schedules, ...unitData } = data;
-
-    // trainingLocations, schedules는 여기서 다루지 않고
-    // 별도 서비스/레포에서 $transaction으로 처리하는 걸 권장
+  // 부대 데이터 업데이트
+  async updateUnitById(id, data) {
     return prisma.unit.update({
       where: { id: Number(id) },
-      data: unitData,
+      data,
     });
   }
 
-  /** 부대 삭제 */
-  async delete(id) {
+  // 부대 데이터 영구 삭제
+  async deleteUnitById(id) {
     return prisma.unit.delete({
       where: { id: Number(id) },
     });
   }
 
-  /**
-   * 📌 거리 배치용: 다가오는 부대 일정 가져오기
-   * - UnitSchedule.date 기준으로 오늘 이후 일정만
-   * - 가까운 날짜 순으로 정렬
-   */
+  // 부대 일정 추가
+  async insertUnitSchedule(unitId, date) {
+    // date는 'YYYY-MM-DD' 형태라고 가정
+    const dt = new Date(`${date}T00:00:00.000Z`);
+
+    return prisma.unitSchedule.create({
+      data: {
+        unitId: Number(unitId),
+        date: dt,
+      },
+    });
+  }
+
+  // 부대 일정 삭제
+  async deleteUnitSchedule(scheduleId) {
+    return prisma.unitSchedule.delete({
+      where: { id: Number(scheduleId) },
+    });
+  }
+
+  // 거리 배치용: 다가오는 부대 일정 가져오기
   async findUpcomingSchedules(limit = 50) {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -90,12 +103,12 @@ class UnitRepository {
       },
       take: limit,
       include: {
-        unit: true, // unit.addressDetail, unit.lat/lng 필요
+        unit: true,
       },
     });
   }
 
-  /** 위/경도 갱신 */
+  // 위/경도 갱신
   async updateCoords(unitId, lat, lng) {
     return prisma.unit.update({
       where: { id: Number(unitId) },

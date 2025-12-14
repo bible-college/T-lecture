@@ -1,120 +1,149 @@
-// web/server/src/domains/user/controllers/admin.controller.js
-const adminService = require('../../user/services/user.admin.service');
+// server/src/domains/user/controllers/user.admin.controller.js
+const adminService = require('../services/user.admin.service');
+const asyncHandler = require('../../../common/middlewares/asyncHandler');
+const logger = require('../../../config/logger');
+const AppError = require('../../../common/errors/AppError');
 
-// [신규] 전체 유저 목록 조회 (검색/필터)
-exports.getUsers = async (req, res) => {
-  try {
-    // req.query: { role, status, name } 등
-    const users = await adminService.getAllUsers(req.query);
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+// ✅ :userId 파라미터를 안전하게 숫자로 변환 + 검증
+function parseUserIdParam(req) {
+  const raw = req.params?.userId;
+
+  if (raw === undefined || raw === null || String(raw).trim() === '') {
+    throw new AppError('userId 파라미터가 올바르지 않습니다.', 400, 'INVALID_USER_ID');
   }
-};
 
-// [기존] 승인 대기 목록 조회
-exports.getPendingUsers = async (req, res) => {
-  try {
-    const users = await adminService.getPendingUsers();
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  const userId = Number(raw);
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new AppError('userId 파라미터가 올바르지 않습니다.', 400, 'INVALID_USER_ID');
   }
-};
 
-// [신규] 특정 유저 상세 조회
-exports.getUserById = async (req, res) => {
-  try {
-    const user = await adminService.getUserById(req.params.id);
-    res.json(user);
-  } catch (error) {
-    res.status(404).json({ error: error.message });
-  }
-};
+  return userId;
+}
 
-// [신규] 유저 정보 수정
-exports.updateUser = async (req, res) => {
-  try {
-    const updatedUser = await adminService.updateUser(req.params.id, req.body);
-    res.json(updatedUser);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+// ✅ 전체 사용자 조회
+exports.getUsers = asyncHandler(async (req, res) => {
+  const users = await adminService.getAllUsers(req.query);
+  res.json(users);
+});
 
-// [신규] 유저 삭제
-exports.deleteUser = async (req, res) => {
-  try {
-    const result = await adminService.deleteUser(req.params.id);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+// ✅ 대기 사용자 조회
+exports.getPendingUsers = asyncHandler(async (req, res) => {
+  const users = await adminService.getPendingUsers();
+  res.json(users);
+});
 
-// [기존] 유저 승인
-exports.approveUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { role } = req.body; // (선택)
-    const result = await adminService.approveUser(userId, role);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+// ✅ 사용자 ID로 조회
+exports.getUserById = asyncHandler(async (req, res) => {
+  const userId = parseUserIdParam(req); 
+  const user = await adminService.getUserById(userId);
+  res.json(user);
+});
 
-// [기존] 일괄 승인
-exports.approveUsersBulk = async (req, res) => {
-  try {
-    const { userIds } = req.body;
-    const result = await adminService.approveUsersBulk(userIds);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+// ✅ 사용자 ID로 수정
+exports.updateUser = asyncHandler(async (req, res) => {
+  const userId = parseUserIdParam(req); 
+  const updatedUser = await adminService.updateUser(userId, req.body);
 
-// [기존] 유저 승인 거절
-exports.rejectUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const result = await adminService.rejectUser(userId);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+  logger.info('[admin.updateUser]', {
+    actorId: req.user?.id,
+    targetUserId: userId,
+    bodyKeys: Object.keys(req.body || {}),
+  });
 
-// [기존] 일괄 거절
-exports.rejectUsersBulk = async (req, res) => {
-  try {
-    const { userIds } = req.body;
-    const result = await adminService.rejectUsersBulk(userIds);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+  res.json(updatedUser);
+});
 
+// ✅ 사용자 ID로 삭제
+exports.deleteUser = asyncHandler(async (req, res) => {
+  const userId = parseUserIdParam(req); 
+  const result = await adminService.deleteUser(userId);
 
-exports.setAdminLevel = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { level } = req.body; // "GENERAL" | "SUPER"
-    const result = await adminService.setAdminLevel(userId, level || 'GENERAL');
-    res.json(result);
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
-};
+  logger.info('[admin.deleteUser]', {
+    actorId: req.user?.id,
+    targetUserId: userId,
+  });
 
-exports.revokeAdminLevel = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const result = await adminService.revokeAdminLevel(userId);
-    res.json(result);
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
-};
+  res.json(result);
+});
+
+// ✅ 사용자 ID로 승인
+exports.approveUser = asyncHandler(async (req, res) => {
+  const userId = parseUserIdParam(req); 
+  const result = await adminService.approveUser(userId);
+
+  logger.info('[admin.approveUser]', {
+    actorId: req.user?.id,
+    targetUserId: userId,
+  });
+
+  res.json(result);
+});
+
+// ✅ 사용자 ID로 승인 (일괄)
+exports.approveUsersBulk = asyncHandler(async (req, res) => {
+  const { userIds } = req.body;
+  const result = await adminService.approveUsersBulk(userIds);
+
+  logger.info('[admin.approveUsersBulk]', {
+    actorId: req.user?.id,
+    count: Array.isArray(userIds) ? userIds.length : 0,
+  });
+
+  res.json(result);
+});
+
+// ✅ 사용자 ID로 거부
+exports.rejectUser = asyncHandler(async (req, res) => {
+  const userId = parseUserIdParam(req); 
+  const result = await adminService.rejectUser(userId);
+
+  logger.info('[admin.rejectUser]', {
+    actorId: req.user?.id,
+    targetUserId: userId,
+  });
+
+  res.json(result);
+});
+
+// ✅ 사용자 ID로 거부 (일괄)
+exports.rejectUsersBulk = asyncHandler(async (req, res) => {
+  const { userIds } = req.body;
+  const result = await adminService.rejectUsersBulk(userIds);
+
+  logger.info('[admin.rejectUsersBulk]', {
+    actorId: req.user?.id,
+    count: Array.isArray(userIds) ? userIds.length : 0,
+  });
+
+  res.json(result);
+});
+
+// ✅ 관리자 레벨 설정
+exports.setAdminLevel = asyncHandler(async (req, res) => {
+  const userId = parseUserIdParam(req); 
+  const { level } = req.body;
+
+  const result = await adminService.setAdminLevel(userId, level);
+
+  logger.info('[admin.setAdminLevel]', {
+    actorId: req.user?.id,
+    targetUserId: userId,
+    level: level,
+  });
+
+  res.json(result);
+});
+
+// ✅ 관리자 레벨 회수
+exports.revokeAdminLevel = asyncHandler(async (req, res) => {
+  const userId = parseUserIdParam(req); 
+  const result = await adminService.revokeAdminLevel(userId);
+
+  logger.info('[admin.revokeAdminLevel]', {
+    actorId: req.user?.id,
+    targetUserId: userId,
+  });
+
+  res.json(result);
+});

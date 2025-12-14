@@ -2,15 +2,13 @@
 const prisma = require('../../libs/prisma');
 
 class DistanceRepository {
-  /**
-   * 강사-부대 거리 정보 upsert
-   */
+  // 강사-부대 거리 정보 upsert
     async upsertDistance(instructorId, unitId, { distance, duration }) {
         return prisma.instructorUnitDistance.upsert({
         where: {
-            instructor_unit_distance_pk: {
-            instructorId,
-            unitId,
+            userId_unitId: {
+            userId: Number(instructorId),
+            unitId: Number(unitId),
             },
         },
         update: {
@@ -18,34 +16,33 @@ class DistanceRepository {
             duration,
         },
         create: {
-            instructorId,
-            unitId,
+            userId: Number(instructorId), // ✅ [수정] 필드명 userId 사용
+            unitId: Number(unitId),
             distance,
             duration,
         },
         });
     }
-    /**
-   * 강사-부대 한 쌍의 거리 정보 조회
-   */
+
+    // 강사-부대 한 쌍의 거리 정보 조회
     async findOne(instructorId, unitId) {
-            return prisma.instructorUnitDistance.findUnique({
-            where: {
-                instructor_unit_distance_pk: {
-                instructorId,
-                unitId,
-                },
+        return prisma.instructorUnitDistance.findUnique({
+        where: {
+            userId_unitId: {
+            userId: Number(instructorId),
+            unitId: Number(unitId),
             },
-            include: {
-                unit: true,        // 필요 없으면 삭제
-                instructor: true,  // 필요 없으면 삭제
+        },
+        include: {
+            unit: true,
+            instructor: {
+                include: { user: true }
             },
-            });
+        },
+        });
     }
 
-    /**
-     * 여러 부대 ID에 해당하는 거리 정보 일괄 조회
-     */
+    // 여러 부대 ID에 해당하는 거리 정보 일괄 조회
     async findManyByUnitIds(unitIds) {
         return prisma.instructorUnitDistance.findMany({
             where: {
@@ -53,13 +50,11 @@ class DistanceRepository {
             },
         });
     }
-    /**
-     * 특정 강사 기준, 거리 범위 안에 있는 부대들 조회
-     */
+    // 특정 강사 기준, 거리 범위 안에 있는 부대들 조회
     async findByDistanceRange(instructorId, minDistance, maxDistance) {
         return prisma.instructorUnitDistance.findMany({
         where: {
-            instructorId,
+            userId: Number(instructorId),
             distance: {
             gte: minDistance,
             lte: maxDistance,
@@ -71,6 +66,27 @@ class DistanceRepository {
         orderBy: {
             distance: 'asc',
         },
+        });
+    }
+
+    // 특정 부대 기준으로 거리 범위 내 강사 리스트 조회
+    async findInstructorsByDistanceRange(unitId, minDistance, maxDistance) {
+        return prisma.instructorUnitDistance.findMany({
+            where: {
+                unitId,
+                distance: {
+                    gte: minDistance,
+                    lte: maxDistance,
+                },
+            },
+            include: {
+                instructor: {
+                    include: { user: true }
+                },
+            },
+            orderBy: {
+                distance: 'asc',
+            },
         });
     }
 }

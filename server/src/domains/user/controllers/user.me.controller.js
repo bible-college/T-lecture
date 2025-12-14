@@ -1,33 +1,33 @@
-// web/server/src/domains/user/controllers/user.me.controller.js
+// server/src/domains/user/controllers/user.me.controller.js
 const userMeService = require('../services/user.me.service');
+const asyncHandler = require('../../../common/middlewares/asyncHandler');
+const logger = require('../../../config/logger');
 
-// GET /api/v1/users/me
-exports.getMyProfile = async (req, res) => {
-  try {
-    // req.user.id는 auth 미들웨어에서 제공 (JWT payload)
-    const profile = await userMeService.getMyProfile(req.user.id);
-    res.json(profile);
-  } catch (error) {
-    res.status(404).json({ error: error.message });
-  }
-};
+// ✅ 내 프로필 조회
+exports.getMyProfile = asyncHandler(async (req, res) => {
+  const profile = await userMeService.getMyProfile(req.user.id);
+  res.json(profile);
+});
 
-// PATCH /api/v1/users/me
-exports.updateMyProfile = async (req, res) => {
-  try {
-    const updatedProfile = await userMeService.updateMyProfile(req.user.id, req.body);
-    res.json(updatedProfile);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+// ✅ 내 프로필 수정
+exports.updateMyProfile = asyncHandler(async (req, res) => {
+  const updatedProfile = await userMeService.updateMyProfile(req.user.id, req.body);
 
-// DELETE /api/v1/users/me (회원 탈퇴)
-exports.withdraw = async (req, res) => {
-  try {
-    const result = await userMeService.withdraw(req.user.id);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+  logger.info('[user.updateMyProfile]', {
+    userId: req.user.id,
+    bodyKeys: Object.keys(req.body || {}),
+  });
+
+  res.json(updatedProfile);
+});
+
+// ✅ 회원 탈퇴
+exports.withdraw = asyncHandler(async (req, res) => {
+  const result = await userMeService.withdraw(req.user.id);
+
+  logger.info('[user.withdraw]', {
+    userId: req.user.id,
+  });
+
+  res.json(result);
+});
