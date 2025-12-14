@@ -6,6 +6,7 @@ class AppError extends Error {
         this.statusCode = statusCode;
         this.code = code;
         this.meta = meta;
+        this.isAppError = true;
     }
 }
 

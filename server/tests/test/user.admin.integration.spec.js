@@ -3,6 +3,7 @@ const { expect } = require('chai');
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 const { app, server } = require('../../src/server');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_key';
@@ -47,12 +48,13 @@ describe('User Admin API Integration Test (Admin APIs Full Coverage)', () => {
     await prisma.user.deleteMany({
       where: { userEmail: { in: [SUPER_ADMIN_EMAIL, GENERAL_ADMIN_EMAIL, TARGET_USER_EMAIL, COMMON_USER_EMAIL] } }
     });
-
+    const pw = 'Test1234!';                 // 클라에서 이걸로 로그인
+    const hashed = await bcrypt.hash(pw, 10);
     // 1) 슈퍼 관리자
     const superAdmin = await prisma.user.create({
       data: {
         userEmail: SUPER_ADMIN_EMAIL,
-        password: 'hash',
+        password: hashed,
         name: '슈퍼',
         status: 'APPROVED',
         admin: { create: { level: 'SUPER' } }
@@ -64,7 +66,7 @@ describe('User Admin API Integration Test (Admin APIs Full Coverage)', () => {
     const generalAdmin = await prisma.user.create({
       data: {
         userEmail: GENERAL_ADMIN_EMAIL,
-        password: 'hash',
+        password: hashed,
         name: '일반',
         status: 'APPROVED',
         admin: { create: { level: 'GENERAL' } }
