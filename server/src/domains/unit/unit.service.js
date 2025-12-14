@@ -5,9 +5,7 @@ const { toCreateUnitDto, excelRowToRawUnit } = require('./unit.mapper');
 const AppError = require('../../common/errors/AppError');
 
 class UnitService {
-  // ----------------------------------------------------------------------
-  // FIX A: 부대 단건 등록 함수 (테스트 필수 기능)
-  // ----------------------------------------------------------------------
+  // 부대 단건 등록
   async registerSingleUnit(rawData) {
     try {
         const cleanData = toCreateUnitDto(rawData);
@@ -66,9 +64,7 @@ class UnitService {
     };
   }
 
-  // ----------------------------------------------------------------------
-  // FIX B.1: 부대 상세 정보 조회 (Test 5 UNIT_NOT_FOUND 에러 코드 일치)
-  // ----------------------------------------------------------------------
+  // 부대 상세 정보 조회
   async getUnitDetailWithSchedules(id) {
     const unit = await unitRepository.findUnitWithRelations(id);
     if (!unit) {
@@ -105,25 +101,22 @@ class UnitService {
     return await unitRepository.updateUnitById(id, updateData);
   }
 
-  // ----------------------------------------------------------------------
-  // FIX: 부대 일정 추가 (유효성 검사 완화하여 400 에러 해결)
-  // ----------------------------------------------------------------------
+  // 부대 일정 추가
   async addScheduleToUnit(unitId, dateStr) {
-    // 1) 부대 존재 여부 확인 (기존 유지)
     const unit = await unitRepository.findUnitWithRelations(unitId);
     if (!unit) {
       throw new AppError('해당 부대를 찾을 수 없습니다.', 404, 'NOT_FOUND');
     }
 
-    // ✅ 2) date 필수 체크
+    // date 필수 체크
     if (!dateStr || typeof dateStr !== 'string') {
       throw new AppError('date는 필수입니다.', 400, 'VALIDATION_ERROR');
     }
 
-    // ✅ 3) ISO가 오면 YYYY-MM-DD만 잘라서 date-only로 정규화
+    // ISO가 오면 YYYY-MM-DD만 잘라서 date-only로 정규화
     const dateOnly = dateStr.includes('T') ? dateStr.slice(0, 10) : dateStr;
 
-    // ✅ 4) YYYY-MM-DD 기본 검증
+    // YYYY-MM-DD 기본 검증
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
       throw new AppError('유효하지 않은 날짜 형식입니다. (YYYY-MM-DD)', 400, 'VALIDATION_ERROR');
     }
@@ -133,7 +126,6 @@ class UnitService {
 
   // 특정 교육 일정 삭제
   async removeScheduleFromUnit(scheduleId) {
-    // 일정 ID 유효성 검사 (기존 유지)
     if (!scheduleId || isNaN(Number(scheduleId))) {
       throw new AppError('유효하지 않은 일정 ID입니다.', 400, 'VALIDATION_ERROR');
     }

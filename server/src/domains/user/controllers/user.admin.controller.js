@@ -8,14 +8,12 @@ const AppError = require('../../../common/errors/AppError');
 function parseUserIdParam(req) {
   const raw = req.params?.userId;
 
-  // raw가 없거나 빈 문자열이면 바로 400
   if (raw === undefined || raw === null || String(raw).trim() === '') {
     throw new AppError('userId 파라미터가 올바르지 않습니다.', 400, 'INVALID_USER_ID');
   }
 
   const userId = Number(raw);
 
-  // NaN, 소수, 0/음수 방지
   if (!Number.isInteger(userId) || userId <= 0) {
     throw new AppError('userId 파라미터가 올바르지 않습니다.', 400, 'INVALID_USER_ID');
   }
@@ -69,8 +67,9 @@ exports.deleteUser = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// ✅ 사용자 ID로 승인
 exports.approveUser = asyncHandler(async (req, res) => {
-  const userId = parseUserIdParam(req); // ✅ 핵심
+  const userId = parseUserIdParam(req); 
   const result = await adminService.approveUser(userId);
 
   logger.info('[admin.approveUser]', {
@@ -81,6 +80,7 @@ exports.approveUser = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// ✅ 사용자 ID로 승인 (일괄)
 exports.approveUsersBulk = asyncHandler(async (req, res) => {
   const { userIds } = req.body;
   const result = await adminService.approveUsersBulk(userIds);
@@ -93,8 +93,9 @@ exports.approveUsersBulk = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// ✅ 사용자 ID로 거부
 exports.rejectUser = asyncHandler(async (req, res) => {
-  const userId = parseUserIdParam(req); // ✅ 핵심
+  const userId = parseUserIdParam(req); 
   const result = await adminService.rejectUser(userId);
 
   logger.info('[admin.rejectUser]', {
@@ -105,6 +106,7 @@ exports.rejectUser = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// ✅ 사용자 ID로 거부 (일괄)
 exports.rejectUsersBulk = asyncHandler(async (req, res) => {
   const { userIds } = req.body;
   const result = await adminService.rejectUsersBulk(userIds);
@@ -117,8 +119,9 @@ exports.rejectUsersBulk = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// ✅ 관리자 레벨 설정
 exports.setAdminLevel = asyncHandler(async (req, res) => {
-  const userId = parseUserIdParam(req); // ✅ 핵심
+  const userId = parseUserIdParam(req); 
   const { level } = req.body;
 
   const result = await adminService.setAdminLevel(userId, level);
@@ -132,8 +135,9 @@ exports.setAdminLevel = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+// ✅ 관리자 레벨 회수
 exports.revokeAdminLevel = asyncHandler(async (req, res) => {
-  const userId = parseUserIdParam(req); // ✅ 핵심
+  const userId = parseUserIdParam(req); 
   const result = await adminService.revokeAdminLevel(userId);
 
   logger.info('[admin.revokeAdminLevel]', {

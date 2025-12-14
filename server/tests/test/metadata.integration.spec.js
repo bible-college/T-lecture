@@ -255,7 +255,8 @@ describe('Metadata API Integration Test (All Routes)', () => {
             
             expect(res.status).to.equal(404);
             expect(res.body.code).to.equal('NOT_FOUND');
-            expect(res.body.error).to.include('해당 팀을 찾을 수 없습니다.');
+            // 변경: '해당 팀을 찾을 수 없습니다.' -> '대상을 찾을 수 없습니다.'
+            expect(res.body.error).to.include('대상을 찾을 수 없습니다.'); 
         });
     });
 
@@ -322,7 +323,8 @@ describe('Metadata API Integration Test (All Routes)', () => {
             
             expect(res.status).to.equal(404);
             expect(res.body.code).to.equal('NOT_FOUND');
-            expect(res.body.error).to.include('해당 덕목을 찾을 수 없습니다.');
+            // 변경: '해당 덕목을 찾을 수 없습니다.' -> '대상을 찾을 수 없습니다.'
+            expect(res.body.error).to.include('대상을 찾을 수 없습니다.');
         });
     });
 
@@ -389,7 +391,8 @@ describe('Metadata API Integration Test (All Routes)', () => {
             
             expect(res.status).to.equal(404);
             expect(res.body.code).to.equal('NOT_FOUND');
-            expect(res.body.error).to.include('해당 템플릿을 찾을 수 없습니다.');
+            // 변경: '해당 템플릿을 찾을 수 없습니다.' -> '대상을 찾을 수 없습니다.'
+            expect(res.body.error).to.include('대상을 찾을 수 없습니다.');
         });
     });
 });

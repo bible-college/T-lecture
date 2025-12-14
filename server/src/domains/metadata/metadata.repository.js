@@ -1,4 +1,4 @@
-// src/domains/metadata/metadata.repository.js
+// server/src/domains/metadata/metadata.repository.js
 const prisma = require('../../libs/prisma');
 
 class MetadataRepository {
@@ -16,7 +16,7 @@ class MetadataRepository {
         });
     }
 
-    // 유저 카테고리 조회
+    // 유저 카테고리 조회 (ENUM → 하드코딩 반환)
     async findCategories() {
         return [
         { id: 'Main', label: '주강사' },
@@ -26,41 +26,41 @@ class MetadataRepository {
         ];
     }
 
-    // 메시지 템플릿 조회
+    // 메시지 템플릿 전체 조회
     async findMessageTemplates() {
         return prisma.messageTemplate.findMany({
-            orderBy: { key: 'asc' }, 
+        orderBy: { key: 'asc' },
         });
     }
 
-    // 메시지 템플릿 조회
+    // 메시지 템플릿 단건 조회
     async findTemplateByKey(key) {
-        return await prisma.messageTemplate.findUnique({
-            where: { key },
+        return prisma.messageTemplate.findUnique({
+        where: { key },
         });
     }
-    
+
     // 팀 수정
     async updateTeam(id, name) {
         return prisma.team.update({
-            where: { id: Number(id) },
-            data: { name },
+        where: { id },
+        data: { name },
         });
     }
 
     // 덕목 수정
     async updateVirtue(id, name) {
         return prisma.virtue.update({
-            where: { id: Number(id) },
-            data: { name },
+        where: { id },
+        data: { name },
         });
     }
 
     // 메시지 템플릿 수정
     async updateMessageTemplate(key, title, body) {
         return prisma.messageTemplate.update({
-            where: { key },
-            data: { title, body },
+        where: { key },
+        data: { title, body },
         });
     }
 }

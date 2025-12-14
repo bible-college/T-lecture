@@ -1,7 +1,7 @@
 // src/domains/metadata/metadata.controller.js
 const metadataService = require('./metadata.service');
 const asyncHandler = require('../../common/middlewares/asyncHandler');
-const AppError = require('../../common/errors/AppError'); // ✅ 추가: 유효성 검사 에러용
+const AppError = require('../../common/errors/AppError'); 
 
 // [강사 가입용] 메타데이터 통합 조회
 exports.getInstructorMeta = asyncHandler(async (req, res) => {
@@ -29,36 +29,38 @@ exports.getMessageTemplates = asyncHandler(async (req, res) => {
 
 // 팀 수정
 exports.updateTeam = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { name } = req.body;
-    if (!name) {
-        throw new AppError('팀 이름(name)이 필요합니다.', 400, 'VALIDATION_ERROR');
-    }
+  const { id } = req.params;
+  const { name } = req.body;
+  if (name === undefined) {
+    throw new AppError('팀 이름(name)이 필요합니다.', 400, 'VALIDATION_ERROR');
+  }
 
-    const updated = await metadataService.updateTeam(id, name);
-    res.json(updated);
+  const updated = await metadataService.updateTeam(id, name);
+  res.status(200).json(updated);
 });
 
 // 덕목 수정
 exports.updateVirtue = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { name } = req.body;
-    if (!name) {
-        throw new AppError('덕목 이름(name)이 필요합니다.', 400, 'VALIDATION_ERROR');
-    }
+  const { id } = req.params;
+  const { name } = req.body;
 
-    const updated = await metadataService.updateVirtue(id, name);
-    res.json(updated);
+  if (name === undefined) {
+    throw new AppError('덕목 이름(name)이 필요합니다.', 400, 'VALIDATION_ERROR');
+  }
+
+  const updated = await metadataService.updateVirtue(id, name);
+  res.status(200).json(updated);
 });
 
 // 메시지 템플릿 수정
 exports.updateTemplate = asyncHandler(async (req, res) => {
-    const { key } = req.params; 
-    const { title, body } = req.body;
-    if (!title || !body) {
-        throw new AppError('템플릿 제목(title)과 본문(body)이 모두 필요합니다.', 400, 'VALIDATION_ERROR');
-    }
+  const { key } = req.params;
+  const { title, body } = req.body;
 
-    const updated = await metadataService.updateMessageTemplate(key, title, body);
-    res.json(updated);
+  if (title === undefined || body === undefined) {
+    throw new AppError('템플릿 제목(title)과 본문(body)이 모두 필요합니다.', 400, 'VALIDATION_ERROR');
+  }
+
+  const updated = await metadataService.updateMessageTemplate(key, title, body);
+  res.status(200).json(updated);
 });
