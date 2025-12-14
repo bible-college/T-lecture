@@ -15,7 +15,7 @@ const isProd = process.env.NODE_ENV === 'production';
 // 실서비스에서 사용하게 될 프론트 주소들
 // 나중에 도메인 정해지면 여기에 추가만 하면 됨.
 const allowedOriginsProd = [
-  'https://app.t-lecture.com',   // 예시: 실제 프론트 도메인
+  'http://localhost:5173',   // 예시: 실제 프론트 도메인
 ];
 
 // 개발 환경용(지금 네가 쓰는 주소)

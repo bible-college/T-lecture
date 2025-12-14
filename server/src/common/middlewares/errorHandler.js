@@ -1,7 +1,12 @@
 // server/src/common/middlewares/errorHandler.js
 const logger = require('../../config/logger');
+const { mapPrismaError } = require('../errors/prismaErrorMapper');
 
 module.exports = (err, req, res, next) => {
+
+    const mapped = mapPrismaError(err);
+    if (mapped) err = mapped;
+
     const statusCode = Number(err.statusCode || err.status || 500);
     const code = err.code || 'INTERNAL_ERROR';
 
@@ -20,9 +25,12 @@ module.exports = (err, req, res, next) => {
     else logger.warn('[API ERROR]', logPayload);
 
     const isProd = process.env.NODE_ENV === 'production';
+    const isAppError = err.isAppError === true;
+    const safeMessage = isProd && !isAppError ? 'Internal Server Error' : err.message;
+
 
     res.status(statusCode).json({
-        error: err.message,
+        error: safeMessage,
         statusCode,
         code,
         // ...(isProd ? {} : { stack: err.stack }),

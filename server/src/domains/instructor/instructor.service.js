@@ -35,7 +35,12 @@ class InstructorService {
 
     for (const assignedDate of assignedDatesSet) {
       if (!newDatesSet.has(assignedDate)) {
-        throw new Error(`이미 배정이 확정된 날짜(${assignedDate})는 근무 가능일에서 제외할 수 없습니다.`);
+        throw new AppError(
+          `이미 배정이 확정된 날짜(${assignedDate})는 근무 가능일에서 제외할 수 없습니다.`,
+          409,
+          'AVAILABILITY_CONFLICT',
+          { assignedDate }
+        );
       }
     }
 

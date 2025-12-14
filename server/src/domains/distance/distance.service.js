@@ -177,7 +177,21 @@ async getInstructorsWithinDistance(unitId, minDistance, maxDistance) {
             const saved = await this.calculateAndSaveDistance(instructorId, unitId);
             return { instructorId, unitId, scheduleDate, distance: saved.distance, status: 'success' };
           } catch (error) {
-            return { instructorId, unitId, scheduleDate, status: 'error', error: error.message };
+            const prismaCode =
+              typeof error?.code === 'string' && error.code.startsWith('P')
+                ? error.code
+                : null;
+
+            return {
+              instructorId,
+              unitId,
+              scheduleDate,
+              status: 'error',
+              error: error.message,
+              code: error.code || 'DISTANCE_CALC_FAILED',
+              statusCode: error.statusCode || 500,
+              prismaCode,
+            };
           }
         })
       );
