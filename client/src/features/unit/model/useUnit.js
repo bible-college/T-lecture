@@ -4,18 +4,20 @@ import { unitApi } from "../api/unitApi";
 export const useUnit = () => {
   const queryClient = useQueryClient();
 
-  // 1. 목록 조회
   const { data: response, isLoading, isError, error } = useQuery({
     queryKey: ["units"],
     queryFn: unitApi.getUnitList,
   });
 
-  const units = response?.data || [];
+  // ✅ 수정됨: 서버 응답 구조(response.data.data)에 맞춰 실제 배열 추출
+  // 구조: response (JSON) -> data (Controller Wrapper) -> data (Service Result Array)
+  const units = response?.data?.data || [];
+  
+  // 참고: 메타데이터(페이지네이션 정보)가 필요하면 아래와 같이 꺼낼 수 있습니다.
+  // const meta = response?.data?.meta;
 
-  // 2. 통합 수정 (기본 정보 + 담당자 정보 동시 처리)
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      // 두 API를 병렬로 호출하여 모두 업데이트
       return Promise.all([
         unitApi.updateUnitBasic(id, data),
         unitApi.updateUnitOfficer(id, data),
@@ -31,7 +33,6 @@ export const useUnit = () => {
     },
   });
 
-  // 3. 삭제
   const deleteMutation = useMutation({
     mutationFn: unitApi.deleteUnit,
     onSuccess: () => {
@@ -40,7 +41,6 @@ export const useUnit = () => {
     },
   });
 
-  // 4. 엑셀 업로드
   const uploadExcelMutation = useMutation({
     mutationFn: unitApi.uploadExcel,
     onSuccess: (res) => {
@@ -50,7 +50,6 @@ export const useUnit = () => {
     onError: () => alert("업로드 실패"),
   });
 
-  // 5. 신규 등록
   const registerMutation = useMutation({
     mutationFn: unitApi.registerUnit,
     onSuccess: () => {
@@ -65,7 +64,7 @@ export const useUnit = () => {
     isLoading,
     isError,
     errorMessage: error?.message,
-    updateUnit: updateMutation.mutate, // 통합된 수정 함수
+    updateUnit: updateMutation.mutate,
     deleteUnit: deleteMutation.mutate,
     uploadExcel: uploadExcelMutation.mutateAsync,
     registerUnit: registerMutation.mutateAsync,

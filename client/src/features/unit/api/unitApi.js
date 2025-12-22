@@ -1,48 +1,55 @@
 import { apiClient } from "../../../shared/apiClient";
 
 export const unitApi = {
-  // 목록 조회
+  // 1. 목록 조회 (경로 수정: unit -> units)
   getUnitList: async () => {
-    const response = await apiClient("/api/v1/unit");
+    const response = await apiClient("/api/v1/units");
     return response.json();
   },
-  // 단건 등록
+  
+  // 2. 단건 등록 (경로 수정: unit -> units)
   registerUnit: async (data) => {
-    const response = await apiClient("/api/v1/unit", {
+    const response = await apiClient("/api/v1/units", {
       method: "POST",
       body: JSON.stringify(data),
     });
     return response.json();
   },
-  // 엑셀 업로드
+  
+  // 3. 엑셀 업로드 (경로 수정 & Content-Type 초기화)
   uploadExcel: async (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await apiClient("/api/v1/unit/upload/excel", {
+    
+    const response = await apiClient("/api/v1/units/upload/excel", {
       method: "POST",
       body: formData,
-      headers: {}, // FormData는 Content-Type 자동 설정
+      // 중요: undefined로 설정해야 apiClient의 기본 JSON 헤더를 덮어쓰고 브라우저 자동 설정을 따름
+      headers: { "Content-Type": undefined }, 
     });
     return response.json();
   },
-  // 기본 정보 수정 (서버: PATCH /:id/basic)
+  
+  // 4. 기본 정보 수정 (경로 수정)
   updateUnitBasic: async (id, data) => {
-    const response = await apiClient(`/api/v1/unit/${id}/basic`, {
+    const response = await apiClient(`/api/v1/units/${id}/basic`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
     return response.json();
   },
-  // 담당자 정보 수정 (서버: PATCH /:id/officer)
+  
+  // 5. 담당자 정보 수정 (경로 수정)
   updateUnitOfficer: async (id, data) => {
-    const response = await apiClient(`/api/v1/unit/${id}/officer`, {
+    const response = await apiClient(`/api/v1/units/${id}/officer`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
     return response.json();
   },
-  // 삭제
+  
+  // 6. 삭제 (경로 수정)
   deleteUnit: async (id) => {
-    await apiClient(`/api/v1/unit/${id}`, { method: "DELETE" });
+    await apiClient(`/api/v1/units/${id}`, { method: "DELETE" });
   },
 };
