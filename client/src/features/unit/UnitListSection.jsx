@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUnit } from './useUnit';
-import Button from '../../shared/ui/Button';
+import { Button } from '../../shared/ui/Button';
 
 export const UnitListSection = () => {
   const { units, isLoading, deleteUnit } = useUnit();
